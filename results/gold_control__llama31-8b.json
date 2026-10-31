@@ -1,0 +1,50 @@
+{
+ "model": "llama3.1:8b",
+ "n_per_family": 5,
+ "rho": {
+  "rho_in": 3.21,
+  "rho_out": 3.253,
+  "in_chars": 12531450,
+  "in_tokens": 3903938,
+  "out_chars": 2047028,
+  "out_tokens": 629278
+ },
+ "families": {
+  "cleansing": {
+   "n": 5,
+   "gold_census_blocking": 0,
+   "verifier_accept_gold": 0,
+   "V_per_product": 1469.6,
+   "S_per_product": 801.9196275089469,
+   "D_gold": 1.832602607028226,
+   "false_reject_rate": 1.0
+  },
+  "emails": {
+   "n": 5,
+   "gold_census_blocking": 0,
+   "verifier_accept_gold": 0,
+   "V_per_product": 1304.6,
+   "S_per_product": 878.9189178836119,
+   "D_gold": 1.484323494983365,
+   "false_reject_rate": 1.0
+  },
+  "invoices": {
+   "n": 5,
+   "gold_census_blocking": 0,
+   "verifier_accept_gold": 0,
+   "V_per_product": 1650.8,
+   "S_per_product": 927.1458409347518,
+   "D_gold": 1.7805181527165752,
+   "false_reject_rate": 1.0
+  },
+  "reports": {
+   "n": 5,
+   "gold_census_blocking": 0,
+   "verifier_accept_gold": 0,
+   "V_per_product": 1704.0,
+   "S_per_product": 776.1489274697786,
+   "D_gold": 2.1954549438791173,
+   "false_reject_rate": 1.0
+  }
+ }
+}

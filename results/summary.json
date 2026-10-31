@@ -1,0 +1,1279 @@
+{
+ "n_records": 480,
+ "n_per_cell": {
+  "baseline": 35,
+  "guardrail": 25
+ },
+ "n_checks": {
+  "cleansing": 30,
+  "emails": 12,
+  "invoices": 18,
+  "reports": 10
+ },
+ "calibration": {
+  "rho_in": 3.2272,
+  "rho_out": 3.2466,
+  "in_chars": 13361582,
+  "in_tokens": 4140342,
+  "out_chars": 2236282,
+  "out_tokens": 688812
+ },
+ "token_split": {
+  "cleansing": 0.8035458068063682,
+  "emails": 0.8050817798879243,
+  "invoices": 0.8760582038910696,
+  "reports": 0.8892128833354216
+ },
+ "verifier_recall": {
+  "n_blocked": 258,
+  "n_caught": 256,
+  "recall": 0.9922480620155039
+ },
+ "verifiability": {
+  "cleansing": 0.778,
+  "emails": 0.556,
+  "invoices": 1.0,
+  "reports": 0.222
+ },
+ "vis_subscores": {
+  "cleansing": {
+   "ground_truth_checkability": 3,
+   "rule_determinism": 2,
+   "judgement": 2
+  },
+  "emails": {
+   "ground_truth_checkability": 2,
+   "rule_determinism": 2,
+   "judgement": 1
+  },
+  "invoices": {
+   "ground_truth_checkability": 3,
+   "rule_determinism": 3,
+   "judgement": 3
+  },
+  "reports": {
+   "ground_truth_checkability": 1,
+   "rule_determinism": 1,
+   "judgement": 0
+  }
+ },
+ "by_model": {
+  "qwen2.5:14b-instruct": [
+   {
+    "family": "cleansing",
+    "n": 35,
+    "S": 28008.934735155297,
+    "V": 93101.0,
+    "R": 102896.0,
+    "P": 43982.0,
+    "D": 6.99765992006812,
+    "D_lo": 6.0843316503044145,
+    "D_hi": 7.904536883050474,
+    "D_mean": 6.997906149666387,
+    "D_full": 8.567944560161775,
+    "V_over_S": 3.3239750415478913,
+    "R_over_S": 3.6736848785202287,
+    "V_share": 0.4750123726383567,
+    "pass1_accept": 0.37142857142857144,
+    "final_accept": 0.6285714285714286,
+    "verifier_accept": 0.0,
+    "rework_rate": 1.0,
+    "mean_rounds": 1.5142857142857142,
+    "effort_per_product": 6856.542857142857
+   },
+   {
+    "family": "emails",
+    "n": 35,
+    "S": 30687.339653388506,
+    "V": 120634.0,
+    "R": 109358.0,
+    "P": 35525.0,
+    "D": 7.494686818660223,
+    "D_lo": 6.553207079965155,
+    "D_hi": 8.517927507063368,
+    "D_mean": 7.49111260694392,
+    "D_full": 8.652330342056272,
+    "V_over_S": 3.931067383570982,
+    "R_over_S": 3.5636194350892407,
+    "V_share": 0.5245138961355178,
+    "pass1_accept": 0.0,
+    "final_accept": 0.0,
+    "verifier_accept": 0.02857142857142857,
+    "rework_rate": 0.9714285714285714,
+    "mean_rounds": 1.8857142857142857,
+    "effort_per_product": 7586.2
+   },
+   {
+    "family": "invoices",
+    "n": 35,
+    "S": 32306.932837651355,
+    "V": 195311.0,
+    "R": 183419.0,
+    "P": 42311.0,
+    "D": 11.722870812379256,
+    "D_lo": 10.20850221079499,
+    "D_hi": 13.293390967897562,
+    "D_mean": 11.722788861922398,
+    "D_full": 13.032527789493766,
+    "V_over_S": 6.045482589804359,
+    "R_over_S": 5.677388222574897,
+    "V_share": 0.5156998389353893,
+    "pass1_accept": 0.0,
+    "final_accept": 0.0,
+    "verifier_accept": 0.0,
+    "rework_rate": 1.0,
+    "mean_rounds": 3.1142857142857143,
+    "effort_per_product": 12029.742857142857
+   },
+   {
+    "family": "reports",
+    "n": 35,
+    "S": 27074.873126872273,
+    "V": 143968.0,
+    "R": 116374.0,
+    "P": 53612.0,
+    "D": 9.615631392990947,
+    "D_lo": 8.007719792287133,
+    "D_hi": 11.384678745693787,
+    "D_mean": 9.616123556584878,
+    "D_full": 11.595769942441404,
+    "V_over_S": 5.317402571948133,
+    "R_over_S": 4.298228821042815,
+    "V_share": 0.5529956749199131,
+    "pass1_accept": 0.0,
+    "final_accept": 0.0,
+    "verifier_accept": 0.02857142857142857,
+    "rework_rate": 0.9714285714285714,
+    "mean_rounds": 1.6571428571428573,
+    "effort_per_product": 8970.114285714286
+   }
+  ],
+  "qwen2.5:14b-instruct__rank": {
+   "spearman": 0.2,
+   "p_perm": 0.9166666666666666,
+   "vis": [
+    0.778,
+    0.556,
+    1.0,
+    0.222
+   ],
+   "D": [
+    6.99765992006812,
+    7.494686818660223,
+    11.722870812379256,
+    9.615631392990947
+   ],
+   "families": [
+    "cleansing",
+    "emails",
+    "invoices",
+    "reports"
+   ]
+  },
+  "llama3.1:8b": [
+   {
+    "family": "cleansing",
+    "n": 35,
+    "S": 28008.934735155297,
+    "V": 94732.0,
+    "R": 92238.0,
+    "P": 38615.0,
+    "D": 6.67536990492271,
+    "D_lo": 5.563368939616411,
+    "D_hi": 8.05393710692841,
+    "D_mean": 6.669094726010596,
+    "D_full": 8.054037118264906,
+    "V_over_S": 3.3822064600371085,
+    "R_over_S": 3.2931634448856015,
+    "V_share": 0.5066695191741991,
+    "pass1_accept": 0.2571428571428571,
+    "final_accept": 0.2,
+    "verifier_accept": 0.0,
+    "rework_rate": 1.0,
+    "mean_rounds": 1.4857142857142858,
+    "effort_per_product": 6445.285714285715
+   },
+   {
+    "family": "emails",
+    "n": 35,
+    "S": 30687.339653388506,
+    "V": 112925.0,
+    "R": 63358.0,
+    "P": 32522.0,
+    "D": 5.744486227581307,
+    "D_lo": 4.9773974577548765,
+    "D_hi": 6.682443448459994,
+    "D_mean": 5.7440186679598,
+    "D_full": 6.804271805846933,
+    "V_over_S": 3.6798562949894156,
+    "R_over_S": 2.0646299325918918,
+    "V_share": 0.6405892797376945,
+    "pass1_accept": 0.0,
+    "final_accept": 0.0,
+    "verifier_accept": 0.0,
+    "rework_rate": 1.0,
+    "mean_rounds": 1.542857142857143,
+    "effort_per_product": 5965.857142857143
+   },
+   {
+    "family": "invoices",
+    "n": 35,
+    "S": 32306.932837651355,
+    "V": 103803.0,
+    "R": 92020.0,
+    "P": 36838.0,
+    "D": 6.061330581397151,
+    "D_lo": 5.280125672078044,
+    "D_hi": 6.876645428561956,
+    "D_mean": 6.060729975707,
+    "D_full": 7.201581195255116,
+    "V_over_S": 3.2130255298957144,
+    "R_over_S": 2.8483050515014368,
+    "V_share": 0.5300858428274513,
+    "pass1_accept": 0.0,
+    "final_accept": 0.0,
+    "verifier_accept": 0.0,
+    "rework_rate": 1.0,
+    "mean_rounds": 1.6571428571428573,
+    "effort_per_product": 6647.457142857143
+   },
+   {
+    "family": "reports",
+    "n": 35,
+    "S": 27074.873126872273,
+    "V": 89112.0,
+    "R": 77329.0,
+    "P": 46363.0,
+    "D": 6.14743416229731,
+    "D_lo": 5.38912225945361,
+    "D_hi": 7.166563318138935,
+    "D_mean": 6.147843743480431,
+    "D_full": 7.859833691659608,
+    "V_over_S": 3.2913173621321543,
+    "R_over_S": 2.8561168001651556,
+    "V_share": 0.5353969274397534,
+    "pass1_accept": 0.0,
+    "final_accept": 0.0,
+    "verifier_accept": 0.0,
+    "rework_rate": 1.0,
+    "mean_rounds": 1.2,
+    "effort_per_product": 6080.114285714286
+   }
+  ],
+  "llama3.1:8b__rank": {
+   "spearman": 0.0,
+   "p_perm": 1.0,
+   "vis": [
+    0.778,
+    0.556,
+    1.0,
+    0.222
+   ],
+   "D": [
+    6.67536990492271,
+    5.744486227581307,
+    6.061330581397151,
+    6.14743416229731
+   ],
+   "families": [
+    "cleansing",
+    "emails",
+    "invoices",
+    "reports"
+   ]
+  }
+ },
+ "guardrail": {
+  "qwen2.5:14b-instruct": [
+   {
+    "family": "cleansing",
+    "n_base": 25,
+    "n_guard": 25,
+    "D_base": 6.934046425915643,
+    "D_guard": 13.963474712524993,
+    "D_base_lo": 5.900962652277744,
+    "D_base_hi": 7.9703248232749315,
+    "D_guard_lo": 11.363602538800984,
+    "D_guard_hi": 16.885389957831315,
+    "delta_D": 7.029428286609351,
+    "delta_lo": 4.423748960441889,
+    "delta_hi": 9.85507085141196,
+    "cut_pct": -101.37555843781523,
+    "effort_base": 6809.36,
+    "effort_guard": 12741.64,
+    "throughput_cost_pct": 87.1194943430807,
+    "pass1_accept_base": 0.36,
+    "pass1_accept_guard": 0.64,
+    "rework_base": 1.48,
+    "rework_guard": 1.76
+   },
+   {
+    "family": "emails",
+    "n_base": 25,
+    "n_guard": 25,
+    "D_base": 7.013832491043571,
+    "D_guard": 12.601081099904038,
+    "D_base_lo": 5.951413941392517,
+    "D_base_hi": 8.093932123247503,
+    "D_guard_lo": 10.693945752674411,
+    "D_guard_hi": 14.711740460401229,
+    "delta_D": 5.587248608860467,
+    "delta_lo": 3.351715917680619,
+    "delta_hi": 8.022318197341821,
+    "cut_pct": -79.66042268610202,
+    "effort_base": 7168.24,
+    "effort_guard": 12437.24,
+    "throughput_cost_pct": 73.50479336629354,
+    "pass1_accept_base": 0.0,
+    "pass1_accept_guard": 0.0,
+    "rework_base": 1.76,
+    "rework_guard": 1.8
+   },
+   {
+    "family": "invoices",
+    "n_base": 25,
+    "n_guard": 25,
+    "D_base": 10.819764349326325,
+    "D_guard": 22.85073126736002,
+    "D_base_lo": 9.116775335847592,
+    "D_base_hi": 12.543163578279596,
+    "D_guard_lo": 19.4044697796434,
+    "D_guard_hi": 26.289747641263382,
+    "delta_D": 12.030966918033693,
+    "delta_lo": 8.409089731732443,
+    "delta_hi": 15.960574108912962,
+    "cut_pct": -111.19435257185414,
+    "effort_base": 11197.08,
+    "effort_guard": 22700.64,
+    "throughput_cost_pct": 102.73714218349785,
+    "pass1_accept_base": 0.0,
+    "pass1_accept_guard": 0.0,
+    "rework_base": 2.88,
+    "rework_guard": 3.36
+   },
+   {
+    "family": "reports",
+    "n_base": 25,
+    "n_guard": 25,
+    "D_base": 9.846474917689225,
+    "D_guard": 13.866062675484688,
+    "D_base_lo": 8.012670474809845,
+    "D_base_hi": 11.936687608583705,
+    "D_guard_lo": 11.686600021346173,
+    "D_guard_hi": 16.26212387888105,
+    "delta_D": 4.019587757795463,
+    "delta_lo": 0.7432072083774273,
+    "delta_hi": 7.301810652182196,
+    "cut_pct": -40.82260698774808,
+    "effort_base": 9148.92,
+    "effort_guard": 12541.0,
+    "throughput_cost_pct": 37.07628878599878,
+    "pass1_accept_base": 0.0,
+    "pass1_accept_guard": 0.0,
+    "rework_base": 1.68,
+    "rework_guard": 1.48
+   }
+  ],
+  "llama3.1:8b": [
+   {
+    "family": "cleansing",
+    "n_base": 25,
+    "n_guard": 25,
+    "D_base": 6.709956512237651,
+    "D_guard": 9.493967658310714,
+    "D_base_lo": 5.237298851829306,
+    "D_base_hi": 8.569757086853729,
+    "D_guard_lo": 8.016255978284827,
+    "D_guard_hi": 11.124094544941824,
+    "delta_D": 2.7840111460730625,
+    "delta_lo": 0.4653416671938908,
+    "delta_hi": 4.703715306883185,
+    "cut_pct": -41.49074798019286,
+    "effort_base": 6478.52,
+    "effort_guard": 8943.08,
+    "throughput_cost_pct": 38.04202194328332,
+    "pass1_accept_base": 0.2,
+    "pass1_accept_guard": 0.16,
+    "rework_base": 1.52,
+    "rework_guard": 1.4
+   },
+   {
+    "family": "emails",
+    "n_base": 25,
+    "n_guard": 25,
+    "D_base": 5.9922807562184595,
+    "D_guard": 10.028712550807604,
+    "D_base_lo": 4.9824934062773325,
+    "D_base_hi": 7.174545961042792,
+    "D_guard_lo": 8.062047554813974,
+    "D_guard_hi": 12.132505896749302,
+    "delta_D": 4.036431794589145,
+    "delta_lo": 1.7851605184865091,
+    "delta_hi": 6.210668543451078,
+    "cut_pct": -67.36052529582093,
+    "effort_base": 6209.76,
+    "effort_guard": 10058.28,
+    "throughput_cost_pct": 61.97534204220454,
+    "pass1_accept_base": 0.0,
+    "pass1_accept_guard": 0.0,
+    "rework_base": 1.64,
+    "rework_guard": 1.6
+   },
+   {
+    "family": "invoices",
+    "n_base": 25,
+    "n_guard": 25,
+    "D_base": 6.308200494302155,
+    "D_guard": 13.422786273554424,
+    "D_base_lo": 5.35493507290345,
+    "D_base_hi": 7.313731993619868,
+    "D_guard_lo": 11.670612880697467,
+    "D_guard_hi": 15.388038951156286,
+    "delta_D": 7.114585779252269,
+    "delta_lo": 5.118339477587482,
+    "delta_hi": 9.267071406956177,
+    "cut_pct": -112.78312706893949,
+    "effort_base": 6876.96,
+    "effort_guard": 13682.52,
+    "throughput_cost_pct": 98.9617505409367,
+    "pass1_accept_base": 0.0,
+    "pass1_accept_guard": 0.0,
+    "rework_base": 1.72,
+    "rework_guard": 2.2
+   },
+   {
+    "family": "reports",
+    "n_base": 25,
+    "n_guard": 25,
+    "D_base": 6.312646382328356,
+    "D_guard": 17.677519618898714,
+    "D_base_lo": 5.300420968820707,
+    "D_base_hi": 7.6391871807515335,
+    "D_guard_lo": 15.577635875559505,
+    "D_guard_hi": 20.203834314918474,
+    "delta_D": 11.364873236570357,
+    "delta_lo": 8.692331815577408,
+    "delta_hi": 14.063782256352615,
+    "cut_pct": -180.03342098149554,
+    "effort_base": 6210.32,
+    "effort_guard": 15247.92,
+    "throughput_cost_pct": 145.52551237295344,
+    "pass1_accept_base": 0.0,
+    "pass1_accept_guard": 0.0,
+    "rework_base": 1.24,
+    "rework_guard": 2.12
+   }
+  ]
+ },
+ "leakage": {
+  "qwen2.5:14b-instruct": {
+   "n_accepted": 2,
+   "leak_rate": 1.0,
+   "leak_critical": 1.0,
+   "missed_defects_mean": 6.5
+  },
+  "llama3.1:8b": {
+   "n_accepted": 0,
+   "leak_rate": NaN,
+   "leak_critical": NaN
+  }
+ },
+ "sensitivity": [
+  {
+   "lambda": 0.5,
+   "family": "cleansing",
+   "D": 3.49882996003406,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 0.5,
+   "family": "emails",
+   "D": 3.7473434093301115,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 0.5,
+   "family": "invoices",
+   "D": 5.861435406189628,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 0.5,
+   "family": "reports",
+   "D": 4.8078156964954735,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 1.0,
+   "family": "cleansing",
+   "D": 6.99765992006812,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 1.0,
+   "family": "emails",
+   "D": 7.494686818660223,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 1.0,
+   "family": "invoices",
+   "D": 11.722870812379256,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 1.0,
+   "family": "reports",
+   "D": 9.615631392990947,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 2.0,
+   "family": "cleansing",
+   "D": 13.99531984013624,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 2.0,
+   "family": "emails",
+   "D": 14.989373637320446,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 2.0,
+   "family": "invoices",
+   "D": 23.44574162475851,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 2.0,
+   "family": "reports",
+   "D": 19.231262785981894,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 4.0,
+   "family": "cleansing",
+   "D": 27.99063968027248,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 4.0,
+   "family": "emails",
+   "D": 29.97874727464089,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 4.0,
+   "family": "invoices",
+   "D": 46.89148324951702,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 4.0,
+   "family": "reports",
+   "D": 38.46252557196379,
+   "model": "qwen2.5:14b-instruct"
+  },
+  {
+   "lambda": 0.5,
+   "family": "cleansing",
+   "D": 3.337684952461355,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 0.5,
+   "family": "emails",
+   "D": 2.8722431137906534,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 0.5,
+   "family": "invoices",
+   "D": 3.0306652906985754,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 0.5,
+   "family": "reports",
+   "D": 3.073717081148655,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 1.0,
+   "family": "cleansing",
+   "D": 6.67536990492271,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 1.0,
+   "family": "emails",
+   "D": 5.744486227581307,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 1.0,
+   "family": "invoices",
+   "D": 6.061330581397151,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 1.0,
+   "family": "reports",
+   "D": 6.14743416229731,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 2.0,
+   "family": "cleansing",
+   "D": 13.35073980984542,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 2.0,
+   "family": "emails",
+   "D": 11.488972455162614,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 2.0,
+   "family": "invoices",
+   "D": 12.122661162794302,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 2.0,
+   "family": "reports",
+   "D": 12.29486832459462,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 4.0,
+   "family": "cleansing",
+   "D": 26.70147961969084,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 4.0,
+   "family": "emails",
+   "D": 22.977944910325228,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 4.0,
+   "family": "invoices",
+   "D": 24.245322325588603,
+   "model": "llama3.1:8b"
+  },
+  {
+   "lambda": 4.0,
+   "family": "reports",
+   "D": 24.58973664918924,
+   "model": "llama3.1:8b"
+  }
+ ],
+ "termination_sensitivity": [
+  {
+   "model": "pooled",
+   "family": "cleansing",
+   "cap": 1,
+   "patience": 1,
+   "D": 5.150812935140122,
+   "V": 158912.0,
+   "R": 129625.56666666667,
+   "S": 56017.86947031058
+  },
+  {
+   "model": "pooled",
+   "family": "cleansing",
+   "cap": 1,
+   "patience": 2,
+   "D": 5.150812935140122,
+   "V": 158912.0,
+   "R": 129625.56666666667,
+   "S": 56017.86947031058
+  },
+  {
+   "model": "pooled",
+   "family": "cleansing",
+   "cap": 2,
+   "patience": 1,
+   "D": 5.312442907009462,
+   "V": 162089.0,
+   "R": 135502.73333333334,
+   "S": 56017.86947031058
+  },
+  {
+   "model": "pooled",
+   "family": "cleansing",
+   "cap": 2,
+   "patience": 2,
+   "D": 6.608161589035902,
+   "V": 182822.0,
+   "R": 187353.13333333333,
+   "S": 56017.86947031058
+  },
+  {
+   "model": "pooled",
+   "family": "cleansing",
+   "cap": 3,
+   "patience": 1,
+   "D": 5.312442907009462,
+   "V": 162089.0,
+   "R": 135502.73333333334,
+   "S": 56017.86947031058
+  },
+  {
+   "model": "pooled",
+   "family": "cleansing",
+   "cap": 3,
+   "patience": 2,
+   "D": 6.709469738030653,
+   "V": 184597.0,
+   "R": 191253.2,
+   "S": 56017.86947031058
+  },
+  {
+   "model": "pooled",
+   "family": "cleansing",
+   "cap": 5,
+   "patience": 1,
+   "D": 5.312442907009462,
+   "V": 162089.0,
+   "R": 135502.73333333334,
+   "S": 56017.86947031058
+  },
+  {
+   "model": "pooled",
+   "family": "cleansing",
+   "cap": 5,
+   "patience": 2,
+   "D": 6.836514912495416,
+   "V": 187833.0,
+   "R": 195134.0,
+   "S": 56017.86947031058
+  },
+  {
+   "model": "pooled",
+   "family": "emails",
+   "cap": 1,
+   "patience": 1,
+   "D": 4.559119545071135,
+   "V": 179669.0,
+   "R": 100145.5,
+   "S": 61374.67930677701
+  },
+  {
+   "model": "pooled",
+   "family": "emails",
+   "cap": 1,
+   "patience": 2,
+   "D": 4.559119545071135,
+   "V": 179669.0,
+   "R": 100145.5,
+   "S": 61374.67930677701
+  },
+  {
+   "model": "pooled",
+   "family": "emails",
+   "cap": 2,
+   "patience": 1,
+   "D": 5.020696973851908,
+   "V": 190458.0,
+   "R": 117685.66666666666,
+   "S": 61374.67930677701
+  },
+  {
+   "model": "pooled",
+   "family": "emails",
+   "cap": 2,
+   "patience": 2,
+   "D": 6.025367532293827,
+   "V": 216593.0,
+   "R": 153212.0,
+   "S": 61374.67930677701
+  },
+  {
+   "model": "pooled",
+   "family": "emails",
+   "cap": 3,
+   "patience": 1,
+   "D": 5.050703919508784,
+   "V": 190458.0,
+   "R": 119527.33333333333,
+   "S": 61374.67930677701
+  },
+  {
+   "model": "pooled",
+   "family": "emails",
+   "cap": 3,
+   "patience": 2,
+   "D": 6.470111200339127,
+   "V": 229903.0,
+   "R": 167198.0,
+   "S": 61374.67930677701
+  },
+  {
+   "model": "pooled",
+   "family": "emails",
+   "cap": 5,
+   "patience": 1,
+   "D": 5.050703919508784,
+   "V": 190458.0,
+   "R": 119527.33333333333,
+   "S": 61374.67930677701
+  },
+  {
+   "model": "pooled",
+   "family": "emails",
+   "cap": 5,
+   "patience": 2,
+   "D": 6.619586523120765,
+   "V": 233559.0,
+   "R": 172716.0,
+   "S": 61374.67930677701
+  },
+  {
+   "model": "pooled",
+   "family": "invoices",
+   "cap": 1,
+   "patience": 1,
+   "D": 4.595833472631421,
+   "V": 182709.0,
+   "R": 114245.5666666667,
+   "S": 64613.865675302724
+  },
+  {
+   "model": "pooled",
+   "family": "invoices",
+   "cap": 1,
+   "patience": 2,
+   "D": 4.595833472631421,
+   "V": 182709.0,
+   "R": 114245.5666666667,
+   "S": 64613.865675302724
+  },
+  {
+   "model": "pooled",
+   "family": "invoices",
+   "cap": 2,
+   "patience": 1,
+   "D": 5.358526838081974,
+   "V": 202070.0,
+   "R": 144165.13333333333,
+   "S": 64613.865675302724
+  },
+  {
+   "model": "pooled",
+   "family": "invoices",
+   "cap": 2,
+   "patience": 2,
+   "D": 6.803216751375305,
+   "V": 241259.0,
+   "R": 198323.13333333333,
+   "S": 64613.865675302724
+  },
+  {
+   "model": "pooled",
+   "family": "invoices",
+   "cap": 3,
+   "patience": 1,
+   "D": 5.5062866607384695,
+   "V": 204908.0,
+   "R": 150874.46666666667,
+   "S": 64613.865675302724
+  },
+  {
+   "model": "pooled",
+   "family": "invoices",
+   "cap": 3,
+   "patience": 2,
+   "D": 7.866418371471606,
+   "V": 269688.0,
+   "R": 238591.69999999998,
+   "S": 64613.865675302724
+  },
+  {
+   "model": "pooled",
+   "family": "invoices",
+   "cap": 5,
+   "patience": 1,
+   "D": 5.554570414811901,
+   "V": 206327.0,
+   "R": 152575.2666666667,
+   "S": 64613.865675302724
+  },
+  {
+   "model": "pooled",
+   "family": "invoices",
+   "cap": 5,
+   "patience": 2,
+   "D": 8.892100696888201,
+   "V": 299114.0,
+   "R": 275439.0,
+   "S": 64613.865675302724
+  },
+  {
+   "model": "pooled",
+   "family": "reports",
+   "cap": 1,
+   "patience": 1,
+   "D": 6.080132831226938,
+   "V": 196797.0,
+   "R": 132440.65,
+   "S": 54149.74625374453
+  },
+  {
+   "model": "pooled",
+   "family": "reports",
+   "cap": 1,
+   "patience": 2,
+   "D": 6.080132831226938,
+   "V": 196797.0,
+   "R": 132440.65,
+   "S": 54149.74625374453
+  },
+  {
+   "model": "pooled",
+   "family": "reports",
+   "cap": 2,
+   "patience": 1,
+   "D": 6.219514832476447,
+   "V": 198581.0,
+   "R": 138204.15,
+   "S": 54149.74625374453
+  },
+  {
+   "model": "pooled",
+   "family": "reports",
+   "cap": 2,
+   "patience": 2,
+   "D": 7.281276963929171,
+   "V": 220426.0,
+   "R": 173853.3,
+   "S": 54149.74625374453
+  },
+  {
+   "model": "pooled",
+   "family": "reports",
+   "cap": 3,
+   "patience": 1,
+   "D": 6.219514832476447,
+   "V": 198581.0,
+   "R": 138204.15,
+   "S": 54149.74625374453
+  },
+  {
+   "model": "pooled",
+   "family": "reports",
+   "cap": 3,
+   "patience": 2,
+   "D": 7.634540853853258,
+   "V": 227590.0,
+   "R": 185818.45,
+   "S": 54149.74625374453
+  },
+  {
+   "model": "pooled",
+   "family": "reports",
+   "cap": 5,
+   "patience": 1,
+   "D": 6.219514832476447,
+   "V": 198581.0,
+   "R": 138204.15,
+   "S": 54149.74625374453
+  },
+  {
+   "model": "pooled",
+   "family": "reports",
+   "cap": 5,
+   "patience": 2,
+   "D": 7.88153277764413,
+   "V": 233080.0,
+   "R": 193703.0,
+   "S": 54149.74625374453
+  }
+ ],
+ "detection_agreement": {
+  "pooled": {
+   "TP": 256,
+   "FP": 22,
+   "FN": 2,
+   "TN": 0,
+   "rework_tokens": 836992.0,
+   "rework_false_tokens": 52757.0,
+   "n": 280,
+   "precision": 0.920863309352518,
+   "recall": 0.9922480620155039,
+   "false_rej_share": 0.07913669064748201,
+   "rework_false_share": 0.06303166577458327
+  },
+  "by_family": {
+   "cleansing": {
+    "TP": 48,
+    "FP": 22,
+    "FN": 0,
+    "TN": 0,
+    "rework_tokens": 195134.0,
+    "rework_false_tokens": 52757.0,
+    "n": 70,
+    "precision": 0.6857142857142857,
+    "recall": 1.0,
+    "false_rej_share": 0.3142857142857143,
+    "rework_false_share": 0.270362930089067
+   },
+   "emails": {
+    "TP": 69,
+    "FP": 0,
+    "FN": 1,
+    "TN": 0,
+    "rework_tokens": 172716.0,
+    "rework_false_tokens": 0.0,
+    "n": 70,
+    "precision": 1.0,
+    "recall": 0.9857142857142858,
+    "false_rej_share": 0.0,
+    "rework_false_share": 0.0
+   },
+   "invoices": {
+    "TP": 70,
+    "FP": 0,
+    "FN": 0,
+    "TN": 0,
+    "rework_tokens": 275439.0,
+    "rework_false_tokens": 0.0,
+    "n": 70,
+    "precision": 1.0,
+    "recall": 1.0,
+    "false_rej_share": 0.0,
+    "rework_false_share": 0.0
+   },
+   "reports": {
+    "TP": 69,
+    "FP": 0,
+    "FN": 1,
+    "TN": 0,
+    "rework_tokens": 193703.0,
+    "rework_false_tokens": 0.0,
+    "n": 70,
+    "precision": 1.0,
+    "recall": 0.9857142857142858,
+    "false_rej_share": 0.0,
+    "rework_false_share": 0.0
+   }
+  }
+ },
+ "checker_attribution": {
+  "checker_vr": 105820.0,
+  "total_vr": 1790578.0,
+  "total_s": 236156.16070613486,
+  "share": 0.0590982353184279,
+  "share_lo": 0.03491505715855033,
+  "share_hi": 0.08702017865986414,
+  "D_check": 0.4480933280909788,
+  "D_check_lo": 0.2663057083436783,
+  "D_check_hi": 0.6510327475162014,
+  "D_total": 7.582177804068121
+ },
+ "pooled": [
+  {
+   "family": "cleansing",
+   "n": 70,
+   "S": 56017.869470310594,
+   "V": 187833.0,
+   "R": 195134.0,
+   "P": 82597.0,
+   "D": 6.8365149124954145,
+   "D_lo": 6.094905857362596,
+   "D_hi": 7.691085519334856,
+   "D_mean": 6.833500437838492,
+   "D_full": 8.310990839213341,
+   "V_over_S": 3.3530907507924996,
+   "R_over_S": 3.483424161702915,
+   "V_share": 0.4904678470990973,
+   "pass1_accept": 0.3142857142857143,
+   "final_accept": 0.4142857142857143,
+   "verifier_accept": 0.0,
+   "rework_rate": 1.0,
+   "mean_rounds": 1.5,
+   "effort_per_product": 6650.914285714286
+  },
+  {
+   "family": "emails",
+   "n": 70,
+   "S": 61374.67930677701,
+   "V": 233559.0,
+   "R": 172716.0,
+   "P": 68047.0,
+   "D": 6.619586523120765,
+   "D_lo": 5.953776396096161,
+   "D_hi": 7.336198910664618,
+   "D_mean": 6.617565637451859,
+   "D_full": 7.728301073951603,
+   "V_over_S": 3.805461839280199,
+   "R_over_S": 2.814124683840566,
+   "V_share": 0.5748790843640391,
+   "pass1_accept": 0.0,
+   "final_accept": 0.0,
+   "verifier_accept": 0.014285714285714285,
+   "rework_rate": 0.9857142857142858,
+   "mean_rounds": 1.7142857142857142,
+   "effort_per_product": 6776.028571428571
+  },
+  {
+   "family": "invoices",
+   "n": 70,
+   "S": 64613.86567530271,
+   "V": 299114.0,
+   "R": 275439.0,
+   "P": 79149.0,
+   "D": 8.892100696888203,
+   "D_lo": 7.83035925538943,
+   "D_hi": 9.966667740213119,
+   "D_mean": 8.8917594188147,
+   "D_full": 10.117054492374441,
+   "V_over_S": 4.6292540598500365,
+   "R_over_S": 4.262846637038167,
+   "V_share": 0.520602973093866,
+   "pass1_accept": 0.0,
+   "final_accept": 0.0,
+   "verifier_accept": 0.0,
+   "rework_rate": 1.0,
+   "mean_rounds": 2.3857142857142857,
+   "effort_per_product": 9338.6
+  },
+  {
+   "family": "reports",
+   "n": 70,
+   "S": 54149.746253744546,
+   "V": 233080.0,
+   "R": 193703.0,
+   "P": 99975.0,
+   "D": 7.881532777644129,
+   "D_lo": 6.895769268011573,
+   "D_hi": 8.955068415934884,
+   "D_mean": 7.881983650032654,
+   "D_full": 9.727801817050505,
+   "V_over_S": 4.304359967040143,
+   "R_over_S": 3.5771728106039853,
+   "V_share": 0.5461323436031894,
+   "pass1_accept": 0.0,
+   "final_accept": 0.0,
+   "verifier_accept": 0.014285714285714285,
+   "rework_rate": 0.9857142857142858,
+   "mean_rounds": 1.4285714285714286,
+   "effort_per_product": 7525.114285714286
+  }
+ ],
+ "pooled_rank": {
+  "spearman": 0.4,
+  "p_perm": 0.75
+ },
+ "pooled_guardrail": [
+  {
+   "family": "cleansing",
+   "n_base": 50,
+   "n_guard": 50,
+   "D_base": 6.822001469076647,
+   "D_guard": 11.728721185417855,
+   "D_base_lo": 5.903662261611198,
+   "D_base_hi": 7.8136410353447,
+   "D_guard_lo": 10.070092476733894,
+   "D_guard_hi": 13.561817471496557,
+   "delta_D": 4.906719716341208,
+   "delta_lo": 3.061774616188252,
+   "delta_hi": 6.733280808936176,
+   "cut_pct": -71.92492904879613,
+   "effort_base": 6643.94,
+   "effort_guard": 10842.36,
+   "throughput_cost_pct": 63.19172057544169,
+   "pass1_accept_base": 0.28,
+   "pass1_accept_guard": 0.4,
+   "rework_base": 1.5,
+   "rework_guard": 1.58
+  },
+  {
+   "family": "emails",
+   "n_base": 50,
+   "n_guard": 50,
+   "D_base": 6.503056623631015,
+   "D_guard": 11.314896825355818,
+   "D_base_lo": 5.749977199221487,
+   "D_base_hi": 7.3351691519736395,
+   "D_guard_lo": 9.882858293304597,
+   "D_guard_hi": 12.82997183907844,
+   "delta_D": 4.811840201724803,
+   "delta_lo": 3.2169015645868475,
+   "delta_hi": 6.457017996774439,
+   "cut_pct": -73.9935153607518,
+   "effort_base": 6689.0,
+   "effort_guard": 11247.76,
+   "throughput_cost_pct": 68.15308715802064,
+   "pass1_accept_base": 0.0,
+   "pass1_accept_guard": 0.0,
+   "rework_base": 1.7,
+   "rework_guard": 1.7
+  },
+  {
+   "family": "invoices",
+   "n_base": 50,
+   "n_guard": 50,
+   "D_base": 8.56398242181424,
+   "D_guard": 18.13675877045722,
+   "D_base_lo": 7.380069368230716,
+   "D_base_hi": 9.753778236168662,
+   "D_guard_lo": 15.83908570937702,
+   "D_guard_hi": 20.50559203635891,
+   "delta_D": 9.57277634864298,
+   "delta_lo": 7.298467780854047,
+   "delta_hi": 11.909695091612045,
+   "cut_pct": -111.77949553304936,
+   "effort_base": 9037.02,
+   "effort_guard": 18191.58,
+   "throughput_cost_pct": 101.30064999302869,
+   "pass1_accept_base": 0.0,
+   "pass1_accept_guard": 0.0,
+   "rework_base": 2.3,
+   "rework_guard": 2.78
+  },
+  {
+   "family": "reports",
+   "n_base": 50,
+   "n_guard": 50,
+   "D_base": 8.079560650008794,
+   "D_guard": 15.771791147191708,
+   "D_base_lo": 6.919971285515689,
+   "D_base_hi": 9.442169603585933,
+   "D_guard_lo": 14.119901027864296,
+   "D_guard_hi": 17.56700792685488,
+   "delta_D": 7.692230497182914,
+   "delta_lo": 5.3879211926270845,
+   "delta_hi": 10.087534550463207,
+   "cut_pct": -95.20604931871563,
+   "effort_base": 7679.62,
+   "effort_guard": 13894.46,
+   "throughput_cost_pct": 80.92640000416687,
+   "pass1_accept_base": 0.0,
+   "pass1_accept_guard": 0.0,
+   "rework_base": 1.46,
+   "rework_guard": 1.8
+  }
+ ],
+ "pooled_leakage": {
+  "n_accepted": 2,
+  "leak_rate": 1.0,
+  "leak_critical": 1.0,
+  "missed_defects_mean": 6.5
+ },
+ "bars": {
+  "B1_any_family_D_ge_1": true,
+  "B1_worst_family": "invoices",
+  "B1_worst_D": 8.892100696888203,
+  "B2_monotone": false,
+  "B2_spearman": 0.4,
+  "B2_p_perm": 0.75,
+  "B3_cut_pct": -111.77949553304936,
+  "B3_throughput_cost_pct": 101.30064999302869,
+  "B3_met": false
+ }
+}

@@ -1,0 +1,1244 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{fancyhdr}
+
+\captionsetup{font=small,labelfont=bf}
+\setlist[itemize]{leftmargin=1.2em,itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.4em,itemsep=2pt,topsep=3pt}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\renewcommand{\arraystretch}{1.08}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize Verification Debt}
+\fancyhead[R]{\footnotesize\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+
+\input{numbers.tex}
+
+\newcommand{\D}{\ensuremath{D}}
+\newcommand{\SV}{\ensuremath{S}}
+\newcommand{\VV}{\ensuremath{V}}
+\newcommand{\RV}{\ensuremath{R}}
+\newcommand{\famname}[1]{\textsc{#1}}
+
+\title{\bfseries Verification Debt:\\[2pt]
+The Hidden Balance Sheet of Agent-Produced Work}
+\author{Boyu Wang\\[2pt]
+{\small School of Management, University of San Francisco, United States,
+\texttt{bwang62@usfca.edu}}}
+\date{October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Agent deployment does not eliminate the cost of work; it moves it downstream, into checking what
+the agent produced and repairing what fails. We give it an accounting construct. For a task family,
+$\SV$ is the production saving the agent displaces against a stated baseline, $\VV$ is the effort
+to check a product to a fixed acceptance standard, and $\RV$ is the effort to repair failures. The
+debt ratio is $\D=(\VV+\RV)/\SV$, and $\SV-(\VV+\RV)=\SV(1-\D)$ shows what production-only ROI
+leaves out. We apply a protocol --- planted ground truth, a deterministic defect census, an
+independent verification pass, and rework loops --- to four synthetic process families on two local
+open-weight models (\VDnumRecords{} work products, \VDnBaseline{} in the baseline arm). First-pass
+acceptance against the census was rare: \VDfirstPass{} of \VDnBaseline{} baseline products passed
+(concentrated in \famname{cleansing}),
+and the verifier accepted essentially none of even the clean ones, so $\D$ is a multiple of the
+saving on
+every family (\VDDmin--\VDDmax). A positive control reframes this: the planted gold deliverable is
+census-perfect, yet the verifier rejects \VDgoldRej{} of them (\VDgoldRejRate{}; 95\% CI
+\VDgoldRejLo--\VDgoldRejHi). A
+single verification pass already gives $\D_{\text{gold}}=\VDgoldDmin$--$\VDgoldDmax$, so the excess
+of the measured $\D$ over $\D_{\text{gold}}$ includes verifier over-rejection on clean work, which
+we quantify: \VDdetFalseRej{} of first-pass rejections are false, concentrated on \famname{cleansing}
+and gold, and the excess over a one-pass gold baseline (\S\ref{sec:proxy}) of trajectories with a
+false first rejection is \VDchkShare{} of all verification-plus-rework tokens (95\% CI
+\VDchkShareLo--\VDchkShareHi) --- so checker error inflates $\D$ but is a minority of it. $\D\geq 1$
+is therefore guaranteed by the protocol's unit asymmetry (Section~\ref{sec:proxy}), not by
+the work. The verifiability gradient was
+absent --- no detectable monotonic gradient ($\rho_s=\VDspearman$), and a guardrail increased $\D$ by
+\VDguardRiseLo--\VDguardRiseHi. Code, logs and the regeneration script are released alongside
+this paper (Appendix~\ref{app:repro}).
+\end{abstract}
+
+\section{Introduction}
+
+A firm that deploys an agent to process invoices, draft support replies, clean records, or
+summarise operations observes the same thing at first: work that used to take an afternoon
+takes minutes. What it observes next is less comfortable. The invoices are mostly right, but
+someone has to find the ones that are not. The support drafts are fluent, but a draft that
+promises a refund the policy forbids costs more than a slow, correct one. The summary is
+well written and contains a number that appears nowhere in the table.
+
+None of that cost is in the production metric. The production metric counts the work that was
+produced. The cost of establishing whether the work is any good, and of repairing it when it is
+not, lands on a different line, later, and usually on a different team. When the two lines are
+not added together, the reported gain is not a gain. It is a partial sum.
+
+This paper is about adding the lines together, for a unit of agent-produced work, in a way that
+can be measured rather than argued about.
+
+\paragraph{The claim, in one sentence.}
+Agent deployment does not eliminate the cost of work --- it shifts cost downstream into
+verification and rework, and on every task family we measured that shifted cost is a multiple of
+the production saving. The more useful finding is what the multiple is made of: a structural floor
+(the checker re-reads the inputs), plus a checker-error component that we now measure --- false
+first-pass rejections are \VDdetFalseRej{} of rejections, and the excess over a one-pass gold
+baseline (\S\ref{sec:proxy}) of trajectories with a false first rejection is \VDchkShare{} of all
+$\VV+\RV$ (95\% CI \VDchkShareLo--\VDchkShareHi) --- and the rest is repair of genuine defects.
+
+\paragraph{Why an accounting construct.}
+The field already knows the symptom and the bottleneck. Firm-level evidence on coding agents
+finds output up and delivered work flat, with review absorbing the difference
+\citep{chen2026}. Case studies name review as the constraint. What is missing is not another
+observation but a \emph{unit of account}: a quantity defined per unit of agent-produced work,
+decomposed into its parts, measurable under controlled conditions, and comparable across task
+types. Without such a quantity, every claim about agent ROI is a claim about a numerator with an
+unstated denominator.
+
+The construct we propose is deliberately simple. Three costs, one ratio. Its interest is not in
+its arithmetic but in three properties: it is defined against a stated baseline rather than
+against a vendor's counterfactual; it separates checking from repairing, because the two behave
+differently under intervention; and it is parameterised by a property of the task, verifiability,
+that can be rated before any model is run.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+\item \textbf{The construct and a structural bar.} We define, for a task family, the gross
+production saving $\SV$, the verification cost $\VV$, the rework cost $\RV$, and the debt ratio
+$\D=(\VV+\RV)/\SV$, together with the accounting identity that separates booked from net gain
+(Section~\ref{sec:construct}). We observe $\D\geq 1$ on every family we measured, but report it as
+a \emph{structural} consequence of the identity --- a perfect product still incurs the
+verification-cost floor --- rather than as evidence about agent work quality
+(Section~\ref{sec:results}).
+\item \textbf{A pre-registered verifiability test and its (null) result.} We rate verifiability as
+an independently rated property of the family before any model is run, state the ordering
+hypothesis up front, and test it against measured ratios. The test \emph{failed}: the rank
+correlation was absent, so verifiability did not predict where the debt landed
+(Sections~\ref{sec:construct} and~\ref{sec:results}).
+\item \textbf{The measurement protocol.} Planted ground truth, a deterministic defect census by
+severity, an independent verification pass with a fixed rubric, and rework loops run to
+acceptance or a round cap. The protocol, not only the numbers, is the deliverable: it transfers
+to task families we did not build (Section~\ref{sec:protocol}).
+\item \textbf{The intervention result.} Guardrails --- an acceptance checklist plus a mandated
+dual verification pass --- treated as a debt-management instrument: we measure both the change in
+$\D$ and the throughput it costs, and report that it moved $\D$ the wrong way on every family
+(Section~\ref{sec:results}).
+\item \textbf{A measured proxy and its bias.} Verification effort is measured in agent tokens.
+We say what that proxy can and cannot support, give the direction of its bias, and report the
+sensitivity band over conversion factors instead of silently converting agent time into human
+hours (Section~\ref{sec:proxy}).
+\end{enumerate}
+
+\paragraph{What this paper does not claim.}
+It does not measure any organisation's ROI. It does not claim that the laboratory ratios are the
+field ratios. It does not claim that agents are unproductive. It does not claim that the magnitude
+of the measured quantity reflects agent work quality --- $\D\geq 1$ is a structural consequence of
+the protocol's unit asymmetry, not a finding about the work. And it does not claim that the verifiability
+axis explains where the debt lands --- the pre-registered test found no detectable gradient, so it did
+not.
+
+\section{What the field sees, and what it is missing}
+\label{sec:field}
+
+\paragraph{The productivity paradox, again.}
+The pattern in which measured output rises while measured organisational performance does not is
+old enough to have a literature. \citet{brynjolfsson1993} named the productivity paradox --- large
+IT investments coexisting with weak aggregate productivity gains, a discrepancy he attributed
+partly to measurement; \citet{brynjolfsson1996} showed the firm-level returns were there,
+conditional on complementary investment; and \citet{brynjolfsson2021} generalised the mechanism
+into a J-curve, in which intangible complements are expensed before they pay back. The lesson is
+not that the gains are illusory but that the accounting boundary determines the sign of the
+answer. Agent deployment reproduces the structure with one difference: the omitted complement is
+now \emph{labour spent checking}, diffuse and absorbed into existing roles, and so invisible in
+exactly the way that makes an ROI deck look good.
+
+\paragraph{The empirical hook.}
+The clearest firm-level evidence to date is the staggered difference-in-differences study of
+coding agents by \citet{chen2026}, ``Artificial Intelligence in the Firm: Bottlenecks in Software
+Production,'' using engineering-management telemetry from 718 firms (more than 700{,}000 workers,
+some 300 million work events).\footnote{Figures are as reported in the August 2026 version of the
+working paper; we cite them as reported rather than re-derived from the microdata, which is not
+public.} Adoption of coding agents is associated with a 30\% increase in lines of code, 20\% more
+commits, and 23\% more pull requests, all statistically significant; autocomplete-only adoption
+shows a smaller 12\% increase. Measures of delivered work show no statistically detectable change:
+issue and epic resolution rates do not move, and neither does headcount. The interval rules out
+growth above roughly 12\%, not small growth, so we read this as ``no detectable change'' rather
+than ``flat.'' The difference is absorbed downstream. Pull-request time-to-merge rises 49\%, the
+share of pull requests receiving change requests rises by about 12 percentage points (from a base
+near 13\%), comments per pull request rise 35\%, and the share of engineers doing review rises
+14\%. Field experiments complement the firm-level view from the individual side: three randomised
+rollouts of GitHub Copilot across 4{,}867 developers at Microsoft, Accenture and an anonymous
+Fortune~100 firm measured individual productivity effects directly \citep{cui2024}. Related field and survey evidence points the same way
+\citep{demirer2026,metr2025,dora2025}. Both literatures
+measure production; neither books
+the checking bill, which is the measurement this paper attempts under controlled conditions.
+
+Read as a production story, this is a puzzle. Read as an accounting story, it is not a puzzle at
+all: production went up, the verification stage became the binding constraint, and the two effects
+cancelled in the only number that was being counted. What the study cannot tell us is the
+\emph{rate} at which the two effects cancel, because it observes neither the verification effort
+nor the rework in comparable units, and because it observes one task family --- code --- whose
+verifiability is unusually high. That is the gap this paper fills.
+
+\paragraph{The gap, stated exactly.}
+Field studies observe the symptom (output up, throughput flat) and case studies name the
+bottleneck (review), but nobody has built the accounting construct --- a verification debt ratio
+defined per unit of agent-produced work, decomposed into verification effort and rework, and
+measured it across process-task families under controlled conditions with planted ground truth.
+That is this paper.
+
+\paragraph{Relation to workflow portfolios.}
+A companion line of work treats deployment as a portfolio problem: which of several agentic
+workflows to run, how many executions to buy, and how to select among their outputs when the
+selector is imperfect \citep{abdolmaleki2026}. That work answers \emph{which workflow to run} and
+prices selection error against compute. This paper is its accounting-side companion: it answers
+\emph{what the run actually costs} once verification is on the books. The two are complementary in
+a specific way. Portfolio selection chooses among workflows whose verification structures differ;
+a debt ratio is what makes those differences comparable in money rather than in accuracy.
+
+\paragraph{Relation to prior uses of the term.}
+``Verification debt'' is already in circulation, and we do not claim the phrase. Industry writing
+and practitioner commentary use it as a \emph{stock}: the accumulated
+backlog of AI-generated code that has not been verified to the organisation's standard.
+The phrase is Vogels's \citep{vogels2025}, and \citet{sonar2026} quantify the stock in a survey of more than
+1{,}100 developers: 96\% do not fully trust AI-generated code, yet only 48\% say they always
+verify it before committing. \citet{agilev2026} uses it similarly, as the shortfall that accrues when output grows faster than
+verification capacity. Our quantity is a \emph{flow ratio} --- verification plus rework cost per
+unit of production saving, with a break-even at one --- which is a different object, and the
+distinction is the point: a stock tells you how much unverified work exists, a flow ratio tells you
+whether a deployment creates value per unit of work. \citet{bhati2026} proposes a structurally
+similar ratio (a ``verification tax'' with verification and rework in the numerator) but normalises
+by generation cost rather than by the displaced production, which is what yields the net-gain
+identity and the $D=1$ break-even here. \citet{crescitelli2026} argue that evaluation should measure
+verification cost rather than correctness, and note that a ratio needs a common unit; we take that
+objection seriously in Section~\ref{sec:proxy}.
+
+\paragraph{Relation to the economics of verification.}
+\citet{catalini2026} argue, at the level of the whole economy, that the binding constraint on
+agent deployment is the cost to verify rather than the cost to automate, and that the gap
+between the two is widening. Theirs is a model of the aggregate; it takes the cost to verify as
+a primitive. This paper is the micro counterpart: an accounting identity and a measurement
+protocol that price verification and rework per task family, and a gold control that separates
+the part of the ratio any checking process must pay from the part a given deployment adds.
+Where \citet{catalini2026} predict that verification binds, we measure by how much, and where
+the floor sits.
+
+\paragraph{Classical antecedents.}
+The decomposition is the cost-of-quality framework with different names: $\VV$ is appraisal cost,
+$\RV$ is internal-failure cost, and leakage is external-failure cost, the classical four-category
+scheme of Juran and Feigenbaum \citep{juran1999,feigenbaum1961}. The verification-and-rework trade
+also has a decision-theoretic ancestor in costly state verification \citep{townsend1979}, where a
+principal pays to observe a state and the optimal audit is costly and imperfect. What is new here is
+not the categories but the \emph{denominator}: pricing the burden against the production the agent
+displaces turns the cost-of-quality accounting into a per-unit break-even that can be compared
+across task families and checked against a pre-registered ordering. We say this plainly because a
+referee will, and because the contribution is stronger when stated as a measurement protocol built
+on old categories than as a new concept.
+
+\section{The construct}
+\label{sec:construct}
+
+\subsection{Three costs and one ratio}
+
+Fix a task family $f$ --- a class of work products that a procedure can produce from a stated
+input. For a deployment configuration $c$ (a model, a prompt, a decoding setting, a workflow), and
+for a unit of agent-produced work, define:
+
+\begin{description}[leftmargin=1.4em,style=nextline,itemsep=3pt]
+\item[Gross production saving $\SV$.] The human-equivalent production cost that the agent
+displaces, measured against a \emph{stated} baseline procedure: the effort a competent operator
+would spend reading the raw inputs and writing the complete correct deliverable. $\SV$ is a
+property of the task instance and the baseline procedure, not of the model, so the same
+denominator applies to every arm compared on that instance.
+\item[Verification cost $\VV$.] The effort required to check the product to a fixed acceptance
+standard --- not to a standard the checker chooses after seeing the product. The standard is
+written down before the run; the checker applies it.
+\item[Rework cost $\RV$.] The effort required to bring failed products to acceptance, including
+the regenerated volume. A product that fails three times and is then accepted has consumed three
+repair attempts, and all three are cost.
+\end{description}
+
+The debt ratio is
+\begin{equation}
+\D \;=\; \frac{\VV+\RV}{\SV}.
+\label{eq:debt}
+\end{equation}
+Because booked ROI counts $\SV$ and the deployment actually nets $\SV-(\VV+\RV)$, we have the
+identity
+\begin{equation}
+\text{net gain} \;=\; \SV\,(1-\D).
+\label{eq:identity}
+\end{equation}
+Equation~\eqref{eq:identity} is the whole argument in one line. If $\D=0.3$, a booked saving of
+one million overstates the net gain by 43\%. If $\D=1$, the deployment is value-neutral and the
+booked saving is entirely fictitious. If $\D>1$, the deployment destroys value on that family
+under that configuration, and no amount of enthusiasm about the production number changes the
+sign. None of this requires a claim about any particular firm: it is an identity, and the
+empirical question is only the value of $\D$.
+
+Two features of the definition are worth defending.
+
+First, $\SV$ is defined against a \emph{procedure}, not against a wage bill. The alternative ---
+pricing the saving as ``hours saved times loaded cost'' --- imports a counterfactual that nobody
+measures: the hours a person would have spent had the agent not existed. Our baseline is
+narrower and auditable: the volume of work the artifact contains, priced in the same unit as the
+costs. Section~\ref{sec:proxy} states exactly what that unit is and what it cannot do.
+
+Second, $\VV$ and $\RV$ are separated even though both are labour. They respond differently to
+intervention. An acceptance checklist attacks $\RV$ by raising first-pass quality; a second
+verification pass attacks $\RV$ by catching more before delivery but raises $\VV$ by construction.
+A single combined number would hide the trade, which is the one a manager actually faces.
+
+\subsection{Verifiability, and the ordering hypothesis}
+
+Not all work is equally checkable. An invoice either matches the purchase order or it does not,
+and a clerk with a spreadsheet settles it in seconds. A written summary of operational data may
+contain a number that is wrong in a way that reads perfectly well, and settling it requires
+re-deriving the number from the table. We define \emph{task verifiability} as an independently
+rated property of the family --- the degree to which a checker can confirm correctness cheaply and
+objectively --- and we operationalise it with a three-item rubric scored before any model is run
+(Section~\ref{sec:protocol}). One scope restriction matters and is easy to miss: the rubric scores
+checkability against a \emph{deterministic oracle} that knows the planted truth. Checkability for a
+fallible language-model verifier is a different quantity, and the positive control
+(Section~\ref{sec:results}) shows the two can diverge sharply --- work that is perfectly checkable
+in principle can still be mis-graded by the checker actually deployed.
+
+The hypothesis, stated before the experiment: \textbf{$\D$ increases as verifiability decreases.}
+The mechanism has two channels, and they point the same way.
+\begin{itemize}
+\item $\VV$ rises, because checking low-verifiability work is nearly as hard as doing it. The
+checker cannot compare against a key; it must re-derive.
+\item $\RV$ rises, because defects in low-verifiability work are subtler. They survive the first
+pass, so more of them reach rework, and the rework is harder to target because the defect is
+often a judgement rather than a value.
+\end{itemize}
+The hypothesis is falsifiable in a useful way: it predicts a monotone ordering across families
+with different verifiability, not merely a positive average.
+
+\subsection{What $\D$ is not}
+
+$\D$ is not a measure of model quality, and it is not comparable across studies that use different
+baseline procedures. It is defined relative to a configuration: the same family can have
+$\D<1$ with a strong model and a deterministic checker and $\D>1$ with a weak model and a
+judgement-based checker. That is a feature. The quantity a manager needs is not ``is this task
+worth automating'' in the abstract but ``is this task worth automating \emph{with this workflow
+and this checking process}'', and $\D$ is indexed exactly that way.
+
+Finally, $\D$ as defined excludes the compute cost of production itself. It is therefore a
+\emph{lower bound} on the total displacement cost. We report the extended ratio
+$\D^{\text{full}}=(P+\VV+\RV)/\SV$, where $P$ is the production cost, as an exploratory
+variant in Section~\ref{sec:robust}.
+
+\section{Measurement protocol}
+\label{sec:protocol}
+
+The protocol is the part of this paper intended to outlive its numbers. It has five components,
+and each exists to close a specific way of fooling oneself.
+
+\subsection{Planted ground truth}
+
+Every instance is generated together with its correct deliverable. The generator is the only
+source of truth: nothing is inferred from model output, and no human judges whether a product is
+right. This closes the most common failure mode in agent evaluation, in which the grader is
+another model whose errors are correlated with the producer's.
+
+Four families were built, each a recognisable class of process work with defects planted at known
+locations: invoice three-way match (18 graded fields), policy-constrained email resolutions (12),
+record consolidation into entities (30), and operational report summaries (10). Appendix
+Table~\ref{tab:spec} gives the full specification. The point for the protocol is only that each
+product is a structured object the census can grade field by field, so a defect is a comparison
+rather than a judgement.
+
+\subsection{The defect census}
+
+The census grades a product against planted truth with deterministic Python. It never sees a
+prompt, a reasoning trace, or a token count, and it is implemented in a module that does not import
+the producer's code. Defects are counted by severity under rules fixed per family before the run:
+in every family, approving defective work is \emph{critical} and rejecting sound work is
+\emph{major}, so that the census prices the error the organisation actually pays for rather than
+the error that is easiest to count. Acceptance on the census side means no critical and no major
+defect.
+
+The census is validated before use: on the canonical (gold) deliverable it must return zero
+defects, and on a deliberately corrupted deliverable it must return at least one blocking defect.
+Both checks run in \texttt{scripts/selftest.py} and pass for all four families. Without that
+check, a ground-truth bug and a model error are indistinguishable.
+
+\subsection{The independent verification pass}
+
+Verification is a separate pass with a different system prompt, no access to the producer's
+reasoning, and an explicit mandate to re-derive the answer from the raw inputs before comparing.
+It applies the family's fixed rubric and emits a verdict plus a list of defects with field,
+severity, and its own recomputed value.
+
+The pass is \emph{not} told the ground truth, and its verdict --- not the census --- gates the
+rework loop, because that is what a deployment does: the organisation repairs what its checking
+process catches. The gap between what the verifier accepts and what the census accepts is then
+measured rather than assumed, and reported as \emph{leakage}
+(Section~\ref{sec:leakage}). A weak checker does not make debt disappear; it moves debt off the
+books, which is worse.
+
+\subsection{Rework to acceptance}
+
+A rejected product returns to the producer with the reviewer's findings and an instruction to
+recompute independently --- where the producer's own arithmetic disagrees with the reviewer's
+suggested value, it keeps its own. The repaired product is re-verified, and the loop continues
+until acceptance or a cap of five rounds.
+
+Two loop-termination rules are pre-registered alongside the cap. The loop stops early if a round
+returns a byte-identical product, or if two consecutive rounds fail to reduce the number of
+distinct findings. Both model what a deployment does when a repair loop stops making progress:
+it escalates to a human. Recording the stall is part of the measurement, not a workaround --- a
+debt that cannot be serviced by rework is a different object from a debt that is merely expensive
+to service.
+
+\subsection{Effort units}
+
+All three components are expressed in one unit: \emph{tokens of text processed}, the token volume a
+procedure must read plus write to do its job. $\VV$ and $\RV$ are measured exactly by the local
+model server (prompt plus completion tokens, summed over every pass and every repair). $\SV$ is
+computed from character volume and converted with a characters-per-token ratio calibrated on the
+run's own traffic, separately for reading ($\rho_{\text{in}}=\VDrhoIn$) and writing
+($\rho_{\text{out}}=\VDrhoOut$):
+\begin{equation}
+\SV \;=\; \frac{\lvert\text{raw inputs}\rvert}{\rho_{\text{in}}}
+\;+\; \frac{\lvert\text{canonical deliverable}\rvert}{\rho_{\text{out}}}.
+\label{eq:S}
+\end{equation}
+The canonical deliverable is the complete correct product in the family's output schema, including
+a one-line justification per field, produced by the generator. $\SV$ therefore prices the volume of
+work the artifact contains. Wall-clock latency is logged per record, but only in aggregate (the
+verifier's share is recoverable, the rework share is not), so we do not report a seconds-based
+recomputation of $\D$; the conversion band in Section~\ref{sec:results} carries the unit caveat
+instead.
+
+Because $\D$ has $\SV$ in the denominator, differences in instance size across families would
+produce differences in $\D$ that have nothing to do with verification. Instance sizes were
+therefore matched by construction: \emph{per-product} $\SV$ ranges from \VDsmin{} to \VDsmax{}
+tokens across the four families, a ratio of \VDsratio{}. (Table~\ref{tab:main} reports $\SV$ summed
+over a family's baseline products; the per-product figure is that sum divided by the cell size.)
+We report this matching rather than leaving it implicit, because unmatched denominators are the
+most likely way for a study of this kind to manufacture its own result.
+
+\subsection{Pre-registration}
+\label{sec:prereg}
+
+The success bars, the verifiability rubric and its scores, the $\SV$ baseline procedure, the
+decoding settings, the rework cap and the severity rules were written into the repository's
+\texttt{README.md} and committed before any debt ratio was computed. The bars were:
+
+\begin{itemize}
+\item \textbf{B1.} At least one family shows $\D\geq 1.0$ under the baseline configuration.
+\item \textbf{B2.} $\D$ orders monotonically with the independently rated verifiability score
+across the four families (Spearman $\leq-0.8$, exact permutation $p\leq0.10$).
+\item \textbf{B3.} Guardrails cut $\D$ by at least 30\% on the worst baseline family at no more
+than 15\% throughput cost.
+\end{itemize}
+
+A missed bar is reported as a finding with its measured value. Rubrics, caps, baselines, severity
+rules and the bars themselves (B1--B3) were fixed before the run and were not changed after seeing
+results. One change \emph{was} made in response to a result, and we label it as such rather than
+fold it into the pre-registration: after the first sweep (v1, 340-token producer budget) returned a
+zero first-pass acceptance, we raised the producer budget to 1536 and re-ran (v2, the run reported
+throughout). This is a post-hoc protocol amendment. The v1 result --- zero first-pass census
+acceptance (0 of 280 baseline) and $\D=5.53$--$8.87$ (worst family invoices, 8.87) --- is reported
+as headline metrics only in Table~\ref{tab:versions}. The v1 raw logs were overwritten when the
+truncation amendment re-ran the protocol from scratch (the old \texttt{results/raw/*.jsonl} were
+archived to \texttt{results/raw\_trunc340\_archive/}), so v1 per-family $\VV/\SV$ and $\RV/\SV$
+cannot be recomputed or verified and are not tabulated. The deviation is recorded in
+\texttt{README.md}\,\S1.7, but only the v2 logs are retained in the repository. Other post-hoc
+analyses are labelled exploratory.
+
+\section{The verification-effort proxy}
+\label{sec:proxy}
+
+This section exists because the central measurement in this paper is a proxy, and a paper that
+does not say so is asking to be misread.
+
+\paragraph{What is measured.} $\VV$ is the number of tokens an independent verifier agent processes
+while checking a product to the rubric. $\RV$ is the number of tokens repair calls process. Neither
+is human verification effort. A human checking six invoices opens a spreadsheet, joins on the
+purchase order, and looks at a column of differences; the token count of a language model
+re-deriving the same comparison from prose is a different quantity with a different cost structure.
+
+\paragraph{Two biases, in opposite directions.} We expected agent token volume to \emph{understate}
+human verification effort, and to understate it most where verifiability is lowest: a human with a
+tool is cheap per mechanical check, an agent re-reads the whole instance on every pass regardless,
+so its token count rises less than a human's time as verifiability falls. That bias would make
+measured $\D$ a lower bound on a human $\D$. A second bias points the other way: when the verifier
+is wrong it triggers rework a correct checker would not, so $\RV$ prices some of the checker's
+error. The positive control bounds this (it rejects \VDgoldRej{} of census-perfect gold instances,
+\VDgoldRejRate{}; 95\% CI \VDgoldRejLo--\VDgoldRejHi), and Section~\ref{sec:results} quantifies it
+directly: we attribute to the checker only the \emph{excess} over a one-pass gold baseline, because
+the first verification pass is a structural floor (below), not error. For every trajectory whose
+first rejection was false, excess $= (\VV+\RV) - \SV\cdot\D_{\text{gold}}$ (matched to the
+trajectory's family and model, and floored at zero, since no trajectory costs less than one
+verification pass), summed over those trajectories and bootstrapped over products ($B=4000$, seed
+13; the gold baseline is a fixed positive control and is \emph{not} resampled). The checker-attributable
+share is \VDchkShare{} of all $\VV+\RV$ (95\% CI \VDchkShareLo--\VDchkShareHi; excess
+$\D_{\text{check}}=\VDchkD$), so the checker-error component inflates $\D$ but does not dominate it.
+Measured $\D$ is therefore a measurement of this pipeline, with the checker-error increment measured
+rather than assumed.
+
+\paragraph{The structural floor from the accounting.} $\VV$ is the number of tokens the verifier
+\emph{processes}: system prompt, rubric, raw inputs, the product under review, and the verdict. $\SV$
+prices only the raw inputs and the canonical deliverable, with no prompt scaffolding. A single
+verification pass therefore already costs about what $\SV$ costs, before any rework. The gold
+control makes this concrete: a perfect product, verified once, with zero rework, has
+$\D_{\text{gold}}=\VDgoldDmin$--$\VDgoldDmax$. \textbf{B1 is therefore guaranteed by the unit asymmetry,
+not discovered by the experiment}: any pipeline whose verifier must re-read the inputs will show
+$\D\gtrsim 1$ even when every product is correct. The floor is a property of this protocol
+--- its rubric, input representations and verifier configuration --- not a universal constant
+of verification. We report B1 as met but say plainly that it is a
+structural check, not evidence about agent work; the informative quantities are the excess over
+$\D_{\text{gold}}$ and the verifier's error rate.
+
+\paragraph{What we do instead of converting.} We never convert agent time into human hours or
+dollars. Instead we report the whole family of ratios implied by a band of conversion factors
+$\lambda$, where $\lambda$ multiplies measured agent effort before it is compared with $\SV$:
+\begin{equation}
+\D(\lambda) \;=\; \frac{\lambda(\VV+\RV)}{\SV}.
+\label{eq:lambda}
+\end{equation}
+Since $\SV$ does not move, $\D$ is linear in $\lambda$: the \emph{level} of every debt ratio scales
+with the conversion factor, while the \emph{ordering} across families is invariant. The break-even
+is $\lambda^{*}=1/\D$: the ratio stays above one for any conversion factor above
+$\lambda^{*}=\VDlambdaStarMin$--$\VDlambdaStarMax$ across families. That is a more useful statement
+than the band alone --- it says how far the token-to-human scaling could be wrong before the
+qualitative conclusion changes --- and it is the form in which the result should be read. Section
+\ref{sec:robust} reports $\D(\lambda)$ for $\lambda\in\{0.5,1,2,4\}$.
+
+\paragraph{Why tokens and not a common human unit.} A ratio needs a common unit, and the obvious
+candidate --- human minutes --- is undefined when the production cost approaches zero, which is the
+case the construct is about \citep{crescitelli2026}. Tokens are well defined for both the
+production saving and the checking effort, so we use them and state the conversion explicitly
+rather than hiding it in a minutes-per-token constant. The cost is that the level is a proxy; the
+benefit is that the quantity is measurable at all.
+
+\section{Experimental setup}
+\label{sec:setup}
+
+\paragraph{Models and decoding.} Two open-weight models served locally by Ollama on a single
+workstation act as \emph{complete agents} that both produce and self-verify their work:
+\texttt{qwen2.5:14b-instruct} (primary) and \texttt{llama3.1:8b} (secondary). Decoding is fixed per
+role and logged with every artifact: temperature $0$, top-$p$ $1$, fixed seed, context window
+4096, a per-role generation budget of 1536 tokens for the producer and rework and 900 for the verifier, and a
+mild repetition penalty of 1.05 (the 8B model occasionally loops while emitting its verdict JSON;
+appendix~\ref{app:repeats} documents the handling). No API keys and no hosted endpoints are used
+anywhere in the code; the backend refuses any non-loopback host.
+
+\paragraph{Scale.} \VDnBase{} work products per family per model in the baseline arm, and
+\VDnGuard{} per family per model in the guardrail arm, for a total of \VDnumRecords{} records. Each
+record stores the seed, the model, the decoding configuration, the produced text, the verifier's
+verdict, the census result at first pass and at the end, and the token and wall-clock accounting
+for production, verification and rework separately.
+
+\paragraph{Analysis.} The primary estimate of $\D_f$ is the ratio of sums over the family's
+instances --- total cost per unit of total work displaced --- with a 4000-draw instance bootstrap
+for the interval; the mean of per-product ratios is reported alongside. The rank correlation uses
+the pre-registered verifiability score with an exact permutation $p$-value over all $4!=24$
+orderings. Guardrail deltas are computed on the same instances in both arms.
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Debt ratios}
+
+Table~\ref{tab:main} reports the decomposition. Every family carries a debt ratio far above one:
+on all four families and both models, the cost of checking and repairing what the agent produced is
+a multiple --- 5.7 to 11.7, depending on family and model --- of the production saving. \textbf{B1
+is \VDbarB} by its letter, but the positive control below shows that this is a property of the
+accounting, not a discovery, and we report it that way. The worst family is \VDworstFamily{}, at
+$\D=\VDWorstD$ (95\% interval $\VDWorstDlo$--$\VDWorstDhi$).
+
+\paragraph{What the checker catches, and what it misses.} With the 1536-token producer budget the
+producer does ship work the census accepts: on \famname{cleansing}, \VDCleansePass{} of products are
+free of critical and major defects at first pass and \VDCleanseFinal{} after rework, while the other
+three families remain at zero (Table~\ref{tab:main}). Matching the verifier's first-pass decision to
+the census at the product level --- the level at which accept/reject is made, with \emph{positive}
+defined as the census flagging a blocking defect --- gives \VDdetTP{} true positives,
+\VDdetFP{} false rejections, \VDdetFN{} false accepts and \VDdetTN{} true negatives, i.e.\ precision
+\VDdetPrec{} and recall \VDdetRec{}. The error is not diffuse; it is concentrated exactly where clean
+work exists. On the three families whose producer never clears the bar the verifier's precision is
+essentially perfect (invoices \VDdetInvoicesPrec{}, emails \VDdetEmailsPrec{}, reports
+\VDdetReportsPrec{}); on \famname{cleansing} \VDdetCleanseFalseRej{} of its rejections are false ---
+it accepted \VDCleanseVerAcc{} of the \VDdetFP{} census-clean products (precision
+\VDdetCleansePrec{}) --- and on census-perfect gold it rejects \VDgoldRej{}. Attributing only the excess over a one-pass gold baseline (\S\ref{sec:proxy}) of every product
+whose first rejection was false --- verification \emph{and} rework beyond the unavoidable first
+pass ---
+the checker-attributable share is \VDchkShare{} of all $\VV+\RV$ (95\% CI \VDchkShareLo--\VDchkShareHi),
+or an excess $\D_{\text{check}}=\VDchkD$ (95\% CI \VDchkDLo--\VDchkDHi) against a total
+$\D=\VDchkDTotal$; so checker error inflates $\D$ but is a minority of it, and the bulk of the work
+repairs genuine defects. The verifier is a reject-biased detector whose precision collapses as the clean base rate
+rises: it is right on dirty work and wrong on clean work, and only \famname{cleansing} and the gold
+control contain enough clean work to expose it. On the three families where the producer still ships
+defective work at first pass, rework ends at its stall detector for the large majority of items
+(87--100\% depending on family), with the remainder hitting the five-round cap; that is why the
+measured $\RV$ is the cost of \emph{attempted} repair rather than of successful repair.
+
+\paragraph{The positive control.} To separate the accounting from the work, we ran the planted gold
+deliverable --- the correct product, by construction --- through the same verifier and census. The
+census accepts it on every instance (0/5 blocking, all families), so the gold is not the problem.
+The verifier rejects it anyway: across both models it rejects the planted gold on
+\VDgoldRej{} of instances (\VDgoldRejRate{}; 95\% CI \VDgoldRejLo--\VDgoldRejHi; per-family and
+per-model rates in Table~\ref{tab:gold}). With one verification pass and zero rework, the ratio is
+already $\D_{\text{gold}}=\VDgoldDmin$--$\VDgoldDmax$. The checker is not uniformly bad, and the
+split is the informative part: on the \emph{dirty} side it performs well, rejecting \VDverCaught{}
+of the \VDverBlocked{} census-blocked baseline products (recall \VDverRecall); it is the
+\emph{clean} side where it fails, rejecting \VDgoldRej{} of the gold instances (\VDgoldRejRate{};
+95\% CI \VDgoldRejLo--\VDgoldRejHi). That the
+verifier's acceptance of gold (\VDgoldAcc{}) is statistically indistinguishable from its acceptance
+of production work (\VDBaseAccPooled{} pooled over both models; Fisher exact $p=\VDgoldFisher$, not
+significant) means the checker shows essentially no discrimination between clean and defective
+products. We
+therefore \emph{cannot} read the production rework as dominated by false positives: the census
+flagged all but \VDfirstPass{} of the baseline products at first pass, so most rejections are correct
+catches (precision \VDdetPrec{}). The control and the product-level agreement above do more than
+assert over-rejection --- they quantify it: \VDdetFalseRej{} of first-pass rejections are false,
+concentrated on \famname{cleansing} (\VDdetCleanseFalseRej{}) and on gold (\VDgoldRej{}), and
+the excess over a one-pass gold baseline of trajectories with a false first rejection is
+\VDchkShare{} of all $\VV+\RV$ (95\% CI \VDchkShareLo--\VDchkShareHi). Two consequences follow, and
+they are the honest reading of the headline numbers: (i) B1 is guaranteed by the unit asymmetry in
+Section~\ref{sec:proxy}, since a verifier that re-reads the inputs costs about what $\SV$ prices;
+and (ii) the excess of the measured $\D$ over $\D_{\text{gold}}$ is now decomposed into a measured
+checker-error component (\VDchkD{} of $\D$) and genuine defect repair, not assumed
+wholesale; a stronger or human checker would move both $\VV$ and $\RV$, and the false-reject rate,
+not the raw level, is the quantity to watch.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Positive control: the planted gold deliverable through verifier and census, both models,
+5 instances per family. The census accepts every gold product; the verifier mostly does not.
+False-reject is the share of gold the verifier rejects; pooled false-reject \VDgoldRej{}
+(\VDgoldRejLo--\VDgoldRejHi, 95\% CI).}
+\label{tab:gold}
+\begin{tabular}{llrrr}
+\toprule
+family & model & gold accepted & false-reject & $\D_{\text{gold}}$ \\
+\midrule
+\famname{invoices}  & Qwen  & \VDGoldAccqwenInvoices & \VDGoldFrqwenInvoices & \VDGoldDqwenInvoices \\
+\famname{invoices}  & Llama & \VDGoldAccllamaInvoices & \VDGoldFrllamaInvoices & \VDGoldDllamaInvoices \\
+\famname{cleansing} & Qwen  & \VDGoldAccqwenCleanse & \VDGoldFrqwenCleanse & \VDGoldDqwenCleanse \\
+\famname{cleansing} & Llama & \VDGoldAccllamaCleanse & \VDGoldFrllamaCleanse & \VDGoldDllamaCleanse \\
+\famname{emails}    & Qwen  & \VDGoldAccqwenEmails & \VDGoldFrqwenEmails & \VDGoldDqwenEmails \\
+\famname{emails}    & Llama & \VDGoldAccllamaEmails & \VDGoldFrllamaEmails & \VDGoldDllamaEmails \\
+\famname{reports}   & Qwen  & \VDGoldAccqwenReports & \VDGoldFrqwenReports & \VDGoldDqwenReports \\
+\famname{reports}   & Llama & \VDGoldAccllamaReports & \VDGoldFrllamaReports & \VDGoldDllamaReports \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\small
+\caption{Debt-ratio decomposition, pooled over both models. $\SV$, $\VV$, $\RV$ in thousands of
+tokens; $\D=(\VV+\RV)/\SV$; interval is a 4000-draw instance bootstrap. ``pass'' is the share of
+products with no critical or major defect at first pass; ``final'' after rework.}
+\label{tab:main}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+family & $\SV$ & $\VV$ & $\RV$ & $\VV/\SV$ & $\RV/\SV$ & $\D$ & pass & final \\
+\midrule
+\famname{invoices}  & \VDInvoicesS & \VDInvoicesV & \VDInvoicesR & \VDInvoicesVS & \VDInvoicesRS & \VDInvoicesD{} [\VDInvoicesDlo, \VDInvoicesDhi] & \VDInvoicesPass & \VDInvoicesFinal \\
+\famname{cleansing} & \VDCleanseS & \VDCleanseV & \VDCleanseR & \VDCleanseVS & \VDCleanseRS & \VDCleanseD{} [\VDCleanseDlo, \VDCleanseDhi] & \VDCleansePass & \VDCleanseFinal \\
+\famname{emails}    & \VDEmailsS & \VDEmailsV & \VDEmailsR & \VDEmailsVS & \VDEmailsRS & \VDEmailsD{} [\VDEmailsDlo, \VDEmailsDhi] & \VDEmailsPass & \VDEmailsFinal \\
+\famname{reports}   & \VDReportsS & \VDReportsV & \VDReportsR & \VDReportsVS & \VDReportsRS & \VDReportsD{} [\VDReportsDlo, \VDReportsDhi] & \VDReportsPass & \VDReportsFinal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:decomp} shows the same decomposition graphically, with the unit line at $\D=1$.
+The visual point is the one the identity makes: the bars are not small relative to the unit. For
+\famname{reports}, verification alone costs \VDReportsVS{} times the production saving, before any
+rework is counted.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.52\linewidth]{figures/fig1_decomposition.pdf}
+\caption{Debt-ratio decomposition by family, primary model. Verification (dark) and rework
+(light) cost per unit of production saving. The dashed line is $\D=1$, where the deployment is
+value-neutral.}
+\label{fig:decomp}
+\end{figure}
+
+\subsection{The verifiability gradient}
+
+Figure~\ref{fig:monotone} plots $\D$ against the verifiability score assigned before any run.
+\textbf{B2 is \VDbarC}, and it fails by showing no detectable gradient rather than a clean
+inversion. The pre-registered hypothesis was that debt rises as verifiability falls. The measured
+Spearman correlation is $\rho_s=\VDspearman$ with exact permutation $p=\VDpperm$: the sign is
+positive, but with four families and $p=0.75$ the data do not support a claim of reversal --- they
+support the weaker statement that the pre-registered gradient is not there. The correlation is flat
+on the secondary model ($\rho_s=\VDqSpearman$ primary, $\rho_s=\VDlSpearman$ secondary), so it is
+not a pooled artifact of one model. Note also that with $n=4$ the pre-registered threshold
+($\rho_s\le-0.8$, $p\le0.10$) is effectively a requirement of perfect monotonicity: only
+$\rho_s=-1$ clears $p\le0.10$. B2 was a weak test by construction, and we say so rather than
+over-read its failure.
+
+We can say something about \emph{why} the gradient is absent, but it is a conjecture, and the
+obvious version of it is contradicted by our own table. Where work is verifiable, the checker can
+localise a defect to a field, so the loop has something to act on: it re-derives, repairs,
+re-verifies, and books the tokens. But the number of graded checks does not by itself predict
+$\D$: \famname{cleansing} has the most checks per product (\VDchecksCleanse) and a lower ratio
+($\VDCleanseD$) than \famname{invoices} (\VDchecksInvoices{} checks, $\VDInvoicesD$) or
+\famname{reports} (\VDchecksReports{} checks, $\VDReportsD$). What seems to separate the families is
+whether the checker can point to a \emph{specific wrong field}, not how many fields exist; that is
+consistent with the positive control (the verifier rejects correct work, so its false positives,
+not the check count, drive rework), but we have not measured localisability directly. The
+defensible claim is narrower than the one we would like: the ledger records what the checking
+process can see and act on, and on this data that quantity is not ordered by verifiability.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\linewidth]{figures/fig2_monotone.pdf}
+\caption{Debt ratio against pre-registered verifiability score, pooled over models, with bootstrap
+intervals. The dotted line is a least-squares fit shown for orientation only; the test is the rank
+correlation.}
+\label{fig:monotone}
+\end{figure}
+
+\subsection{Guardrails as debt management}
+
+The guardrail arm adds two things and nothing else: a structured acceptance checklist the producer
+must complete before emitting its product, and a mandated second verification pass before delivery.
+Figure~\ref{fig:guard} and Table~\ref{tab:guard} report the trade.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Guardrail arm, compared on the same instances in both arms (matched $\VDnGuard$ per
+family per model). $\Delta\D$ is the change in the debt ratio; throughput cost is the percentage
+increase in total effort (production plus verification plus rework) per work product.}
+\label{tab:guard}
+\begin{tabular}{lrrrrr}
+\toprule
+family & $\D$ baseline & $\D$ guarded & $\Delta\D$ (\%) & throughput cost & pass (guarded) \\
+\midrule
+\famname{invoices}  & \VDInvoicesGuardBase & \VDInvoicesGuardD & \VDInvoicesGuardChange & \VDInvoicesGuardCost & \VDInvoicesGuardPass \\
+\famname{cleansing} & \VDCleanseGuardBase & \VDCleanseGuardD & \VDCleanseGuardChange & \VDCleanseGuardCost & \VDCleanseGuardPass \\
+\famname{emails}    & \VDEmailsGuardBase & \VDEmailsGuardD & \VDEmailsGuardChange & \VDEmailsGuardCost & \VDEmailsGuardPass \\
+\famname{reports}   & \VDReportsGuardBase & \VDReportsGuardD & \VDReportsGuardChange & \VDReportsGuardCost & \VDReportsGuardPass \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.48\linewidth]{figures/fig3_guardrail.pdf}
+\caption{Guardrail arm: increase in $\D$ (positive = debt rose) against throughput cost. The
+dashed lines mark the pre-registered B3 corner (a 30\% cut at $\le$15\% cost).}
+\label{fig:guard}
+\end{figure}
+
+\textbf{B3 is \VDbarD} --- and it fails in the direction opposite to the intervention's intent.
+Compared on the \emph{same} instances in both arms, the guardrail did not cut $\D$; it raised it,
+from $\D=\VDWorstGuardBase$ to $\D=\VDWorstGuardD$ on the worst family, a change of
+$+\VDWorstGuardDlo$ to $+\VDWorstGuardDhi$ (95\% CI, paired bootstrap) at a throughput cost of
+\VDWorstGuardCost. The pattern holds on every family (Table~\ref{tab:guard}): the debt ratio rises
+by \VDguardRiseLo--\VDguardRiseHi and total effort per product rises by
+\VDguardCostLo--\VDguardCostHi, with paired intervals that exclude zero on all four families.
+
+The decomposition says where the money went. The mandated second verification pass roughly doubles
+$\VV$ by construction --- the second pass is billed in full --- and the checklist was supposed to
+buy that cost back by preventing rework. Mostly it did not: first-pass blocking defects barely move
+(from about 3.9 to 3.7 per product on \famname{invoices}), the verifier still accepts essentially
+nothing (see the accept columns in Table~\ref{tab:main}), and mean rework rounds actually \emph{rise}
+on three of four families. There is one honest counterexample: on \famname{cleansing} the guardrail
+did raise the census pass rate, from \VDCleansePass{} to \VDCleanseGuardPass{} (about nine
+percentage points), so the checklist is not inert. But the gain does not pay for itself: $\D$ on
+\famname{cleansing} still rises from \VDCleanseGuardBase{} to \VDCleanseGuardD{}, because the second
+pass is billed in full and the acceptance gain is too small to offset it. On the three families where
+the producer never clears the bar the guardrail is a pure cost adder, and the ratio registers it as
+such.
+
+This failure is partly a design consequence, and we say so. With the verifier accepting
+essentially nothing in both arms, the guardrail's only acceptance gain is the \famname{cleansing}
+pass-rate improvement, which is too small to offset the doubled verification cost; and because the
+second pass doubles $\VV$ while $\RV$ is truncated by the stall detector, $\D$ can only rise.
+The result is still informative --- it shows that a verification mandate applied to a producer that
+mostly never clears the bar is mostly a cost, with a small acceptance gain only where the producer
+already ships clean work --- but it is a weaker test of the instrument than the pre-registration
+implied, and a stronger producer is needed to give the guardrail a fair chance
+(Section~\ref{sec:limitations}).
+
+\subsection{Leakage: what the checker does not see}
+\label{sec:leakage}
+
+The rework loop is gated by the verifier, not by ground truth, because that is what a deployment
+does. The gap between the two is where defects ship. On this experiment the gap is degenerate in
+an instructive way: the verifier accepted only \VDqBaseAcc{} products on the primary model and
+\VDlBaseAcc{} on the secondary, and the primary accepts that occurred still carried a critical
+defect under the census (\VDqLeak{} leak rate). That 100\% is an anecdote, not an estimate: with two accepted products the
+interval is uninformative, and we report the count rather than a rate. The informative fact is the
+denominator --- a checker that accepts almost nothing produces almost no \emph{accepted} work to
+leak, because everything is escalated instead.
+
+Two readings, both uncomfortable. The benign one: almost nothing ships through the accept path,
+so leakage of \emph{accepted} work is small here --- the failure mode is stalled escalation, not
+silent delivery. The uncomfortable one: a checking process this strict is one parameter change
+away from a lax one. Relax the verifier's rubric slightly and its acceptance rate rises; the
+products it waves through are exactly the ones the census shows are defective, and the leak rate
+on this data was 100\% of what it did accept. $\D$ measured under a weak checker is therefore
+not comparable to $\D$ measured under a strong one: the weak checker books less $\VV$, triggers
+less $\RV$, and delivers the defects. That is why the protocol measures the deterministic census
+alongside the loop, and why $\RV$ should be read as rework under the workflow's own checking
+process, not under an ideal one. Nor can the bill be cut by staffing the check with more copies
+of the producing model: a companion study measures difficulty-adjusted failure correlation of
+$\phi = 0.80$ between same-model agents, so a same-model checker inherits the producer's
+failures rather than policing them \citep{wang2026onebrain}.
+
+\subsection{Robustness}
+\label{sec:robust}
+
+We check four things: the extended ratio that includes production cost, the stability of the
+ordering across models, the unit, and the conversion band. All four are reported in
+Appendix~\ref{app:robust}. The short version: the extended ratio raises every level and leaves the
+pooled ordering unchanged; the ordering is \emph{not} stable across the two models, so only the
+level replicates; and the break-even conversion is
+$\lambda^{*}=\VDlambdaStarMin$--$\VDlambdaStarMax$ (pooled over both models), which is the most
+robust statement in the paper because it survives any plausible human-to-agent scaling.
+
+\paragraph{Loop termination is a measurement choice, not a finding.} The rework loop stops at a
+cap of five rounds or when its stall detector trips (the same flagged field set twice, or two
+consecutive rounds with no reduction in the defect count), so the measured $\RV$ is the cost of
+\emph{attempted} repair under that rule --- a reviewer rightly asked whether the debt levels are an
+artifact of the rule. We replay the stored per-round verdicts under tighter rules to bound the
+dependence: on the worst family (pooled over both models) the debt ratio is $\D=\VDtermCapA$ at a
+one-round cap, rising to $\D=\VDtermCapE$ at the deployed five-round cap --- the same
+$\VDWorstD$ reported in Table~\ref{tab:main}, which the replay reproduces exactly (a unit test
+asserts this) --- and the stall detector (patience~2) stops most products before the cap, so the cap
+mainly bounds the worst case. The level therefore scales with the rule; what does \emph{not} scale is
+the sign (debt above one) and the structural floor, which hold under every rule we replayed.
+
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{The accounting implication.} The identity in Equation~\eqref{eq:identity} is not a
+critique of agents; it is a statement about what a partial sum does. A firm that books $\SV$ and
+not $\VV+\RV$ is not lying, and its production numbers are not wrong. It is reporting a gross
+figure as if it were net. The remedy is not to stop deploying. It is to book the second line, and
+the contribution of this paper is to make the second line a measurable quantity with a name and a
+unit rather than an anecdote about review queues.
+
+\paragraph{Reading the field pattern through the construct.} The coding-agent evidence
+\citep{chen2026} is consistent with a debt ratio near one in a high-verifiability family: output up
+30\%, review time up 49\%, delivered work flat. Our construct says what that pattern means and
+what would have to be true for it to hold: verification cost rose roughly in proportion to the
+production saving, and rework absorbed the remainder. Our own high-verifiability family
+(\famname{invoices}) sits far above that, at $\D\approx\VDqDInvoices$, but the positive control shows why:
+our verifier rejects most correct work and the accounting has a structural floor, so the lab number
+is not a field estimate. The study cannot tell us how the pattern moves when reviewers are people
+rather than a same-model verifier; that is the field measurement this paper does not attempt.
+
+\paragraph{Guardrails are debt service, not debt avoidance.} The intervention result is best read
+as a portfolio choice, and on these configurations the choice is priced and rejected. A checklist
+plus a second pass raises $\VV$ by construction; whether it lowers $\D$ depends on whether the
+reduction in $\RV$ exceeds the increase in $\VV$. Here it did not: the checklist left the
+first-pass defect rate essentially intact, the second pass doubled verification, and $\D$ rose on
+every family. That is not a failure of the construct but the construct doing its job --- pricing a
+quality intervention instead of assuming it. The framing matters: a guardrail is not free quality,
+it is a payment, and the right question is the price. A deployment that cannot reach its
+acceptance standard should be fixed at the source (a stronger producer, or a smaller and more
+checkable task), not asked to pay for more checking of output that will be rejected anyway.
+
+\paragraph{The verifiability result, read correctly.} The pre-registered ordering did not appear,
+and the honest reading is narrower than the one we pre-registered: with four families and
+$p=0.75$, the data show no detectable gradient, not a reversal. What the experiment does support is
+a claim about the \emph{object} being measured. The ratio prices cost booked by a checking process,
+and the positive control shows that process rejecting correct work most of the time, so part of
+the measured ratio is the checker's error --- now quantified, as the excess over a one-pass gold
+baseline, at \VDchkShare{} of all $\VV+\RV$ (95\% CI \VDchkShareLo--\VDchkShareHi) --- while the
+census shows the baseline
+work was mostly genuinely defective, so most rejections are correct catches (precision \VDdetPrec{}).
+Two deployments can therefore report very
+different $\D$ for work of the same true quality, and the one reporting the \emph{lower} ratio may
+be the one shipping the worse product. This is why the construct is a measurement protocol, not a
+single number: the ratio without the census and the control beside it is a statement about the
+checker, not about the work. It also predicts a testable field pattern: organisations with weak
+review will report attractive agent ROI and high defect escape rates at the same time.
+
+\paragraph{Why the ratio and not the defect rate.} A defect rate tells you how often the agent is
+wrong. It does not tell you what finding out costs, and it does not tell you what repairing costs.
+Two families with identical defect rates can have very different debt ratios if one's defects are
+cheap to detect and the other's are not. The ratio is the quantity that enters the ROI
+calculation; the defect rate is an input to it.
+
+\section{Limitations}
+\label{sec:limitations}
+
+\paragraph{No field measurement.} This paper measures no organisation's ROI. Every number here
+comes from a laboratory with synthetic tasks and planted truth. The ROI implications are stated as
+accounting identities plus measured lab ratios --- ``if a family's field $\D$ resembles the lab
+$\D$, net gain is $\SV(1-\D)$, which is negative for every ratio we measured'' --- and nothing
+stronger. A field study would need to instrument verification and rework in comparable units,
+which is possible but is not this paper.
+
+\paragraph{A single rater for verifiability.} The verifiability scores were assigned from the
+rubric before any run, but by a single rater, so no inter-rater agreement is reported; the README
+sketches a second-rater protocol that this run did not execute. The scores should be read as one
+analyst's prior, and the B2 failure is correspondingly less about the scores than about the absence
+of any gradient to score.
+
+\paragraph{The verifier's error is concentrated on clean work.} The positive control
+(Section~\ref{sec:results}) is not a detail: the same-model verifier rejects \VDgoldRej{} of the
+planted gold instances (\VDgoldRejRate{}; 95\% CI \VDgoldRejLo--\VDgoldRejHi). That demonstrates
+over-rejection of clean work, and the product-level agreement above quantifies it: \VDdetFalseRej{}
+of first-pass rejections are false, concentrated on \famname{cleansing} (\VDdetCleanseFalseRej{})
+and on gold, and the excess over a one-pass gold baseline of checker-attributable trajectories is
+\VDchkShare{} of all $\VV+\RV$ (95\% CI \VDchkShareLo--\VDchkShareHi). It does \emph{not}
+establish that production rework is dominated by false positives: the census flagged all but
+\VDfirstPass{} of the baseline products, so most production rejections are correct catches
+(precision \VDdetPrec{}), and the verifier's precision collapses only where clean work is common. A
+same-model verifier is also the worst case
+for correlated error \citep{huang2023}: it shares the producer's failure modes, so its rejections
+and the producer's defects are not independent. A stronger or human verifier would lower
+both $\VV$ and $\RV$ and change every level in this paper; the direction of the qualitative
+conclusions (debt above the structural floor, a guardrail that costs without curing) is what we
+would expect to survive, but we have not measured it.
+
+\paragraph{Capacity.} For this revision the producer and rework budget is 1536 tokens and the
+verifier budget 900, with context 4096. A reviewer concern was that the original 340-token producer
+budget truncated many products mid-JSON and could have manufactured a zero first-pass acceptance;
+we raised the budget and re-ran --- a post-hoc amendment, labelled as such in \S\ref{sec:prereg}.
+The truncation concern was real for the producer: with room to finish, it now ships census-clean
+work at first pass on \famname{cleansing} (\VDCleansePass{}), so the zero first-pass census
+acceptance in v1 was in part a truncation artefact. What stays near zero is the \emph{verifier's}
+acceptance (\VDCleanseVerAcc{} on \famname{cleansing}; \VDqBaseAcc{} primary, \VDlBaseAcc{}
+secondary). But the token cost of that over-rejection is bounded: the excess over a one-pass gold
+baseline of checker-attributable trajectories is \VDchkShare{} of all $\VV+\RV$ (95\% CI
+\VDchkShareLo--\VDchkShareHi), so the acceptance
+bottleneck is the verifier's, while the debt level is mostly the cost of repairing genuine defects.
+
+\paragraph{External validity of synthetic tasks.} The four families are recognisable classes of
+process work, but they are generated, and generated work is cleaner than real work: the inputs are
+well formed, the rules are stated, and the ground truth is exact. Real process work has ambiguous
+inputs, undocumented exceptions, and standards that live in people's heads. All of those raise
+verification cost, so the lab ratios are more likely to be too low than too high --- but that is
+an argument, not a measurement.
+
+\paragraph{An acceptance standard the \emph{verifier} never meets.} The census acceptance rule is
+deliberately strict --- zero critical or major defects --- and on three of four families neither
+model's producer met it on a single product; on \famname{cleansing}, by contrast, \VDCleansePass{}
+met it at first pass and \VDCleanseFinal{} after rework. What never clears the bar is the
+\emph{verifier}: it accepts \VDqBaseAcc{} of baseline products on the primary model and
+\VDlBaseAcc{} on the secondary, and it rejects census-clean \famname{cleansing} output
+(\VDCleanseVerAcc{} accepted) along with \VDgoldRej{} of census-perfect gold. That makes the level of
+$\D$ a statement about a pipeline whose verifier always escalates, not about one that sometimes
+succeeds, and it removes the acceptance-rate channel from the guardrail comparison (the verifier
+accepts essentially nothing in either arm, so the guardrail can only be judged on cost). A looser
+standard, or a stronger \emph{verifier}, would move both $\VV$ and $\RV$ down and would let the
+checklist show whatever benefit it has. The bars and the rubric were fixed before the run and are
+not loosened here; the limitation is stated so the numbers are read at the right altitude.
+
+\paragraph{Judge and rubric dependence.} The census is deterministic and therefore reproducible,
+but it is only as good as the schema it grades: a product can be substantively right and
+schematically wrong, and the census will call it wrong. The verifier is the weaker link, and the
+positive control prices it (Section~\ref{sec:results}); a stronger checker would change both
+$\VV$ and $\RV$.
+
+\paragraph{One workstation, two models.} Both models are 8--14B open-weight models served on one
+machine. Larger models would produce better first drafts and probably cheaper verification;
+smaller ones the reverse. $\D$ is indexed by configuration for exactly this reason, and the numbers
+here should be read as a measurement of these configurations, not of agents in general.
+
+\paragraph{The proxy.} Section~\ref{sec:proxy} states the direction of the bias and the
+identification limits. The short version: levels are not identified, orderings are, and the
+ordering is tested on a compressed version of the gradient.
+
+\section{Conclusion}
+
+The cost of agent-produced work does not disappear when the production step gets cheap. It moves
+to the step that decides whether the work is any good, and to the step that fixes it when it is
+not. This paper gives that movement a unit of account: three costs, one ratio, one identity. The
+most important result is not the level of the ratio but what the positive control did to it. The
+ratio is above one even for a perfect product, because a verifier that re-reads the inputs costs
+about what the saving prices; and it is far above that floor partly because the checker rejects
+correct work, as the positive control demonstrates. So the honest summary is: the accounting
+has a structural floor, part of the measured excess is checker error --- \VDdetFalseRej{} of
+first-pass rejections are false, and such trajectories are \VDchkShare{} of all $\VV+\RV$ --- and
+the protocol is what lets a reader see both.
+
+The pre-registered results failed, and the failures are the useful part. The verifiability
+ordering did not appear, and we now read the ratio as a property of the checking process rather
+than of the work; the guardrail raised debt, because it billed a second verification pass without
+preventing the rework it was meant to prevent. Together with the positive control, these say
+something specific and testable: a deployment's measured debt is dominated by how reliable its
+checker is, so two organisations with the same true quality can report very different ratios, and
+the one reporting the lower number may be shipping the worse product.
+
+The practical instruction is short. When an agent deployment is proposed, ask for three numbers,
+not one: the production saving, the cost of finding out whether the output is right, and how often
+the checker is wrong on work that is known to be correct. If any of the three is missing, the
+business case is a partial sum. The construct and the control in this paper are what make the
+second and third numbers measurable.
+
+\appendix
+
+\section{Robustness details}
+\label{app:robust}
+
+\paragraph{The extended ratio.} Including production cost, $\D^{\text{full}}=(P+\VV+\RV)/\SV$,
+raises every ratio (\VDdfullMin--\VDdfullMax pooled) and leaves the pooled family ordering unchanged. The
+reported $\D$ is therefore conservative, as Section~\ref{sec:construct} said it would be.
+
+\paragraph{Model heterogeneity.} The pooled ordering is not stable across models and should not
+be over-read. On the primary model the ordering is \famname{invoices} (\VDqDInvoices) $>$
+\famname{reports} (\VDqDReports) $>$ \famname{emails} (\VDqDEmails) $>$ \famname{cleansing} (\VDqDCleanse), with the two
+weakest ratios nearly tied; on the secondary model it is \famname{cleansing} (\VDlDCleanse) $>$
+\famname{reports} (\VDlDReports) $>$ \famname{invoices} (\VDlDInvoices) $>$ \famname{emails} (\VDlDEmails), again with the two
+weakest nearly tied. What replicates across both models is the level --- every family above one by a
+multiple --- not the ranking. Rank statements about verifiability need more models than this
+experiment has.
+
+\paragraph{Units.} The ratio is expressed in tokens. Wall-clock was logged at the product level
+and for each verifier pass, but not separately for rework calls, so a complete seconds-based
+recomputation of $\D$ is not possible from the released logs; we do not claim one. The unit caveat
+is instead handled by the conversion band, under which the level moves and the ordering cannot
+move, because $\D(\lambda)$ is linear in $\lambda$ and $\SV$ does not scale with $\lambda$. The
+asymmetry between the two sides of the ratio is itself measurable: on the baseline run,
+\VDpromptShareMin--\VDpromptShareMax{} of the tokens the checker processes are \emph{prompt} tokens
+--- re-reading the inputs, the rubric and the product --- rather than generated verdicts. The rubric
+and prompt scaffolding have no analogue in $\SV$, which is precisely why $\D_{\text{gold}}$ does not
+approach zero.
+
+\paragraph{The proxy band and the break-even.} Figure~\ref{fig:sens} reports $\D(\lambda)$ for
+$\lambda\in\{0.5,1,2,4\}$. For the worst family the ratio runs from \VDsensMin{} to \VDsensMax{}.
+Because $\D(\lambda)$ is linear and $\SV$ does not move, the ratio crosses one at
+$\lambda^{*}=1/\D$, which on the primary model (Figure~\ref{fig:sens}'s caliber) is
+$\lambda^{*}=\VDlambdaStarQMin$--$\VDlambdaStarQMax$, and pooled over both models
+$\lambda^{*}=\VDlambdaStarMin$--$\VDlambdaStarMax$: the conclusion $\D>1$ survives any
+human-to-agent effort conversion above roughly $0.15$, and fails only if human checking is cheaper
+than that relative to the agent's token volume. This is
+the most robust statement in the paper. It does not, however, repair the verifier-error inflation
+documented by the positive control; the break-even addresses the unit, not the checker.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.46\linewidth]{figures/fig4_sensitivity.pdf}
+\caption{Debt ratio under a band of human-to-agent effort conversion factors, primary model. The
+ratio is linear in $\lambda$; the ordering across families is invariant.}
+\label{fig:sens}
+\end{figure}
+
+\section{Task family specifications}
+\label{app:families}
+
+Each family is a generator plus a deterministic grader, in \texttt{tasks/}. Table~\ref{tab:spec}
+summarises the planted structure.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Family specifications. ``checks'' is the number of graded fields per instance.}
+\label{tab:spec}
+\begin{tabular}{p{2.1cm}p{3.5cm}p{4.2cm}r}
+\toprule
+family & instance & planted structure & checks \\
+\midrule
+\famname{invoices} & 6 three-way-match documents & duplicate id, price drift, quantity drift, tax-rate
+drift, missing receipt & 18 \\
+\famname{emails} & policy KB (7 rules) + 3 emails & defective item, opened item, closed window, clean
+case, chargeback threat; value threshold for escalation & 12 \\
+\famname{cleansing} & 12--16 raw records, 5 entities, system of record & duplicate clusters, format
+drift, blank field, surname trap, contradiction with system of record & 30 \\
+\famname{reports} & 2 tables, 10 weeks $\times$ 6 regions & regional decline, single-week anomaly,
+aggregate trend, handling-time drift & 10 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Severity rules}
+\label{app:severity}
+Severity is assigned so that the census prices the error the organisation pays for. In
+\famname{invoices}, approving a document that should have been held is critical (money leaves), and
+holding a clean document is major. In \famname{emails}, an impermissible action set or a reply that
+promises a forbidden outcome is critical; a wrong amount is major; a missing rule citation is
+minor. In \famname{cleansing}, a wrong system-of-record field or a lost entity is critical; a
+normalisation failure is major. In \famname{reports}, a figure that cannot be reproduced from the
+tables is critical; a wrong figure in the findings block is major. Acceptance on the census side
+means no critical and no major defect.
+
+\section{Verdict parsing and repetition handling}
+\label{app:repeats}
+
+Two decoding artefacts had to be handled before the verifier's verdicts could be trusted, and both
+are documented here because either one, left silent, would have inflated the debt ratio.
+
+\paragraph{Token-budget truncation.} The verifier's defect list can exceed a small generation
+budget, truncating the JSON mid-object. Before the budget was raised, a truncated verdict parsed to
+nothing and \emph{every} product was silently rejected, so the rework loop always ran to its cap and
+$R$ --- and therefore $D$ --- was inflated for a purely mechanical reason. The verifier budget is now
+900 tokens and the \texttt{accepted} field is emitted first in every family's verdict schema, so the
+decision survives truncation even if a defect list does not.
+
+\paragraph{Repetition loops.} The 8B model occasionally enters a repetition loop while emitting its
+verdict, repeating one defect object until the budget is exhausted, so the JSON never closes. Two
+countermeasures are applied: a mild repetition penalty of 1.05 in the decoding options, and a
+salvage parser that recovers the \texttt{accepted} decision and every complete defect object from a
+truncated tail. On a probe of 21 instances across all four families and both models, verdict parse
+failures fell to zero. A verdict that still cannot be parsed is recorded as a verifier error and
+treated as an escalation to a human, not as a rework loop, so it cannot silently inflate $R$.
+
+\section{Reproduction}
+\label{app:repro}
+
+\begin{verbatim}
+python scripts/selftest.py          # census accepts gold, rejects corruption
+python run_all.py sweep --n 35 --n-guard 25 --workers 3
+python run_all.py summarize         # -> results/summary.json
+python make_figs.py                 # -> figures/*.pdf
+python emit_numbers.py              # -> numbers.tex
+tectonic paper.tex
+\end{verbatim}
+
+The sweep is resumable: records are appended to \texttt{results/raw/*.jsonl} and existing
+\texttt{run\_id}s are skipped. Every number in this paper is a macro defined in
+\texttt{numbers.tex}, generated from \texttt{results/summary.json}, which is a pure function of
+the raw logs; \texttt{CLAIMS.md} maps each claim to its source file.
+
+\begin{sloppypar}
+\paragraph{Artifact.} The code, the raw logs (\texttt{results/raw/*.jsonl}), the derived
+\texttt{summary.json}, and the regeneration script are released at
+\url{https://github.com/boyuw/verification-debt} (a permanent DOI will be
+minted). The termination-rule replay is covered by \texttt{tests/test\_termination\_replay.py}, which
+asserts that replaying the deployed rule reproduces the reported $\D$ exactly. Mechanically: at the
+deployed rule the replay consumes every stored round and sums the stored per-round verifier tokens
+and the stored rework \emph{total}, so it is exact; at tighter rules it truncates the stored rounds,
+and because the logs record the rework total but not its per-round split, each rework round under a
+tighter rule is charged the product's mean rework cost (so tighter-rule levels are approximations,
+while the deployed-rule level is not).
+\end{sloppypar}
+
+\paragraph{Environment and determinism.} All runs used Ollama~\texttt{0.35.0} (client
+\texttt{0.40.6}) on a single Apple M2~Max workstation with 32\,GB unified memory. Models were
+\texttt{qwen2.5:14b-instruct} and \texttt{llama3.1:8b}, both the default Ollama pull
+(\texttt{Q4\_K\_M} quantization). Decoding was set to greedy: temperature~0, top-$p$~1,
+seed~\texttt{13}, context window 4096, producer/rework budget 1536 tokens, verifier budget 900
+tokens. Each cell is a single run. We \emph{assume} greedy decoding is bit-reproducible on this
+hardware but have \emph{not} verified token-for-token identity across reruns --- batched inference
+can differ by hardware and batch composition --- so we report no variance band and flag this as a
+reproducibility check still to be run (a 10--20 product rerun would settle it).
+The exact model tags, quantization, and Ollama version are reproducible from
+\texttt{ollama show <tag>} and \texttt{ollama --version}.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Protocol versions. v1 used a 340-token producer budget; v2 (reported throughout) uses
+1536. The change was made after v1 returned zero first-pass acceptance (a post-hoc amendment,
+\S\ref{sec:prereg}). v1 per-family $\VV/\SV$ and $\RV/\SV$ were not retained and cannot be
+recomputed --- the v1 raw logs were overwritten by the v2 re-run (archived to
+\texttt{results/raw\_trunc340\_archive/}) --- so only headline metrics are tabulated (v1 figures as
+reported at the time).}
+\label{tab:versions}
+\begin{tabular}{lrr}
+\toprule
+metric & v1 (340) & v2 (1536) \\
+\midrule
+first-pass census pass (baseline)          & 0/280        & 22/280 \\
+debt ratio $\D$, range over families       & 5.53--8.87   & 6.62--8.89 \\
+worst family (invoices) $\D$               & 8.87         & 8.89 \\
+guardrail $\Delta\D$ (rise)                & 43--98\%     & 72--112\% \\
+guardrail throughput cost                  & 39--89\%     & 63--101\% \\
+verifier accepts (Qwen / Llama)            & not retained & 2/140, 0/140 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{thebibliography}{9}
+\bibitem[Brynjolfsson(1993)]{brynjolfsson1993}
+E.~Brynjolfsson. The productivity paradox of information technology.
+\emph{Communications of the ACM}, 36(12):66--77, 1993.
+
+\bibitem[Brynjolfsson and Hitt(1996)]{brynjolfsson1996}
+E.~Brynjolfsson and L.~Hitt. Paradox lost? Firm-level evidence on the returns to information
+systems spending. \emph{Management Science}, 42(4):541--558, 1996.
+
+\bibitem[Brynjolfsson et al.(2021)]{brynjolfsson2021}
+E.~Brynjolfsson, D.~Rock, and C.~Syverson. The productivity J-curve: How intangibles complement
+general purpose technologies. \emph{American Economic Journal: Macroeconomics}, 13(1):333--372,
+2021.
+
+\bibitem[Chen and Stratton(2026)]{chen2026}
+F.~Chen and J.~Stratton. Artificial intelligence in the firm: Bottlenecks in software production.
+Working paper (job market paper), Harvard University, August 2026 version.
+
+\bibitem[Cui et al.(2024)]{cui2024}
+K.~Z. Cui, M.~Demirer, S.~Jaffe, L.~Musolff, S.~Peng, and T.~Salz. The effects of generative AI on
+high-skilled work: Evidence from three field experiments with software developers. SSRN 4945566,
+2024.
+
+\bibitem[Bhati(2026)]{bhati2026}
+H.~Bhati. Beyond code generation: Reliability, verification, and cost economics in the agentic
+software development lifecycle. arXiv:2609.04681, 2026.
+
+\bibitem[Crescitelli et al.(2026)]{crescitelli2026}
+V.~Crescitelli, G.~Immediato, F.~Persia, and S.~Costantini. AI evaluation should measure
+verification cost, not correctness alone. arXiv:2608.08709, 2026.
+
+\bibitem[Koch(2026)]{agilev2026}
+C.~Koch. Agentic Agile-V: From vibe coding to verified engineering in software and hardware
+development. arXiv:2605.20456, 2026.
+
+\bibitem[Juran and Godfrey(1999)]{juran1999}
+J.~M. Juran and A.~B. Godfrey, editors. \emph{Juran's Quality Handbook}. McGraw-Hill, 5th
+edition, 1999.
+
+\bibitem[Feigenbaum(1961)]{feigenbaum1961}
+A.~V. Feigenbaum. \emph{Total Quality Control}. McGraw-Hill, 1961.
+
+\bibitem[Townsend(1979)]{townsend1979}
+R.~M. Townsend. Optimal contracts and competitive markets with costly state verification.
+\emph{Journal of Economic Theory}, 21(2):265--293, 1979.
+
+\bibitem[Abdolmaleki et al.(2026)]{abdolmaleki2026}
+M.~Abdolmaleki, S.~Jasin, and B.~Wang. Designing agentic AI workflow portfolios under imperfect
+selection and compute cost. arXiv:2609.18126, 2026.
+
+\bibitem[Demirer et al.(2026)]{demirer2026}
+M.~Demirer, L.~Musolff, and L.~Yang. Writing code vs.\ shipping code: Productivity effects across
+generations of AI coding tools. \emph{NBER Working Paper 35275}, doi:10.3386/w35275, 2026.
+
+\bibitem[Becker et al.(2025)]{metr2025}
+J.~Becker, N.~Rush, B.~Barnes, and D.~Rein. Measuring the impact of early-2025 AI on experienced
+open-source developer productivity. arXiv:2507.09089, 2025.
+
+\bibitem[DORA(2025)]{dora2025}
+Google Cloud DORA. \emph{State of AI-Assisted Software Development 2025}. 2025.
+
+\bibitem[Vogels(2025)]{vogels2025}
+W.~Vogels. The renaissance developer. Closing keynote, AWS re:Invent, December 2025.
+
+\bibitem[SonarSource(2026)]{sonar2026}
+SonarSource. \emph{State of Code Developer Survey 2026}. SonarSource, January 2026.
+
+\bibitem[Catalini et al.(2026)]{catalini2026}
+C.~Catalini, X.~Hui, and J.~Wu. Some simple economics of AGI. arXiv:2602.20946, 2026.
+
+\bibitem[Wang(2026)]{wang2026onebrain}
+B.~Wang. One brain, many workers: Common-cause failure and the limits of redundancy in agent
+fleets. Companion paper, 2026.
+
+\bibitem[Huang et al.(2023)]{huang2023}
+J.~Huang, X.~Chen, S.~Mishra, H.~Zheng, A.~W.~Yu, X.~Song, and D.~Zhou. Large language models
+cannot self-correct reasoning yet. arXiv:2310.01798, 2023.
+
+\end{thebibliography}
+
+\end{document}
